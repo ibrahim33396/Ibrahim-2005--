@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>عصفور ستيل - النظام المتكامل للمخازن والحجوزات</title>
+    <style>
+        :root { --asfour-yellow: #ffcc00; --asfour-dark: #1a1a1a; --asfour-gray: #333333; --success: #28a745; --danger: #dc3545; --blue: #007bff; --orange: #fd7e14; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f0f0f; color: white; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; }
+        .header { text-align: center; border-bottom: 4px solid var(--asfour-yellow); margin-bottom: 20px; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 0; overflow-x: auto; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: var(--asfour-gray); color: white; cursor: pointer; font-weight: bold; border-radius: 10px 10px 0 0; min-width: 110px; font-size: 14px;}
+        .tab-btn.active { background: var(--asfour-yellow); color: black; }
+        .content { background: var(--asfour-dark); padding: 25px; border-radius: 0 0 12px 12px; border: 1px solid #444; }
+        .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .wh-row { grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr !important; }
+        label { display: block; margin-bottom: 5px; color: var(--asfour-yellow); font-size: 13px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid var(--asfour-gray); border-radius: 6px; background: #222; color: white; box-sizing: border-box; }
+        input:focus, select:focus { border-color: var(--asfour-yellow); outline: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #1a1a1a; }
+        th { background: #333; color: var(--asfour-yellow); padding: 10px; text-align: right; border: 1px solid #444; }
+        td { padding: 10px; border: 1px solid #333; text-align: right; }
+        .btn { padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .summary-dashboard { display: flex; gap: 20px; margin-bottom: 20px; }
+        .dash-card { flex: 1; background: linear-gradient(145deg, #222, #111); border: 1px solid var(--asfour-yellow); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .dash-card h3 { margin: 0; font-size: 14px; color: #aaa; text-transform: uppercase; }
+        .dash-card .value { font-size: 28px; font-weight: bold; color: var(--asfour-yellow); margin-top: 10px; }
+        .invoice-area { margin-top: 20px; padding: 15px; border: 1px dashed var(--asfour-yellow); border-radius: 8px; background: #151515; }
+        .wh-badge { background: #444; padding: 2px 5px; border-radius: 4px; font-size: 11px; margin-left: 5px; color: #ffcc00; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header"><h1>ASFOUR STEEL</h1></div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ المواد والمستودعات</button>
+        <button class="tab-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
+        <button class="tab-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
+        <button class="tab-btn" onclick="switchTab('res-view', this)">🔒 الحجوزات</button>
+        <button class="tab-btn" onclick="switchTab('inventory-view', this)">📊 الرصيد</button>
+        <button class="tab-btn" onclick="switchTab('logs-view', this)">📋 السجل</button>
+    </div>
+
+    <div class="content">
+        <!-- إدارة المواد والمستودعات -->
+        <div id="manage-view" class="tab-content">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة..." onkeydown="if(event.key==='Enter') addNewItem()">
+                <input type="text" id="newWHName" placeholder="إضافة مستودع جديد..." onkeydown="if(event.key==='Enter') addNewWH()">
+            </div>
+            <table>
+                <thead><tr><th>المادة</th><th>توزيع المستودعات</th><th>الإجمالي</th><th>الإجراء</th></tr></thead>
+                <tbody id="manageBody"></tbody>
+            </table>
+        </div>
+
+        <!-- فواتير الداخل -->
+        <div id="in-view" class="tab-content" style="display:none;">
+            <div class="form-row wh-row">
+                <div><label>المادة:</label><input type="text" id="inName" list="itemsList" onkeydown="kbNav(event, 'inQty')"></div>
+                <div><label>العدد:</label><input type="number" id="inQty" onkeydown="kbNav(event, 'inWH')"></div>
+                <div><label>المستودع:</label><select id="inWH" onkeydown="kbNav(event, 'inWeight')"></select></div>
+                <div><label>الوزن:</label><input type="number" id="inWeight" onkeydown="kbNav(event, 'inSender')"></div>
+                <div><label>المورد:</label><input type="text" id="inSender" onkeydown="kbNav(event, 'inNotes')"></div>
+            </div>
+            <div><label>ملاحظات:</label><input type="text" id="inNotes" onkeydown="if(event.key==='Enter') addToInvoice('in')"></div>
+            <button class="btn" style="background:var(--blue); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('in')">➕ إضافة للمسودة (Enter)</button>
+            <div class="invoice-area">
+                <table id="inInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>حذف</th></tr></thead><tbody></tbody></table>
+                <button class="btn" style="background:var(--success); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('in')">✅ حفظ وترحيل الفاتورة</button>
+            </div>
+        </div>
+
+        <!-- فواتير الخارج -->
+        <div id="out-view" class="tab-content" style="display:none;">
+            <div class="form-row wh-row">
+                <div><label>المادة:</label><input type="text" id="outName" list="itemsList" onkeydown="kbNav(event, 'outQty')"></div>
+                <div><label>العدد:</label><input type="number" id="outQty" onkeydown="kbNav(event, 'outWH')"></div>
+                <div><label>المستودع:</label><select id="outWH" onkeydown="kbNav(event, 'outWeight')"></select></div>
+                <div><label>الوزن:</label><input type="number" id="outWeight" onkeydown="kbNav(event, 'outSender')"></div>
+                <div><label>المستلم:</label><input type="text" id="outSender" onkeydown="kbNav(event, 'outNotes')"></div>
+            </div>
+            <div><label>ملاحظات:</label><input type="text" id="outNotes" onkeydown="if(event.key==='Enter') addToInvoice('out')"></div>
+            <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('out')">📤 إضافة للمسودة (Enter)</button>
+            <div class="invoice-area">
+                <table id="outInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>حذف</th></tr></thead><tbody></tbody></table>
+                <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('out')">✅ خصم الكميات من المخازن</button>
+            </div>
+        </div>
+
+        <!-- نظام الحجوزات -->
+        <div id="res-view" class="tab-content" style="display:none;">
+            <div class="form-row">
+                <div><label>المادة:</label><input type="text" id="resName" list="itemsList" onkeydown="kbNav(event, 'resQty')"></div>
+                <div><label>العدد:</label><input type="number" id="resQty" onkeydown="kbNav(event, 'resCustomer')"></div>
+                <div><label>الزبون:</label><input type="text" id="resCustomer" onkeydown="kbNav(event, 'resNotes')"></div>
+                <div><label>ملاحظات:</label><input type="text" id="resNotes" onkeydown="if(event.key==='Enter') addReservation()"></div>
+            </div>
+            <button class="btn" style="background:var(--orange); color:white; width:100%;" onclick="addReservation()">🔒 تثبيت الحجز (Enter)</button>
+            <table style="margin-top:20px;">
+                <thead><tr><th>المادة</th><th>العدد</th><th>الزبون</th><th>حذف</th></tr></thead>
+                <tbody id="resBody"></tbody>
+            </table>
+        </div>
+
+        <!-- الرصيد العام -->
+        <div id="inventory-view" class="tab-content" style="display:none;">
+            <div class="summary-dashboard">
+                <div class="dash-card"><h3>إجمالي الرصيد</h3><div id="grandTotalQty" class="value">0</div></div>
+                <div class="dash-card"><h3>إجمالي المحجوز 🔒</h3><div id="grandTotalRes" class="value" style="color:var(--orange)">0</div></div>
+            </div>
+            <input type="text" id="invSearch" onkeyup="renderInventory()" placeholder="بحث في الأصناف...">
+            <table><thead><tr><th>المادة</th><th>رصيد المستودعات</th><th>المتاح للبيع</th></tr></thead><tbody id="invBody"></tbody></table>
+        </div>
+
+        <!-- السجل وتصدير الإكسيل -->
+        <div id="logs-view" class="tab-content" style="display:none;">
+            <button class="btn" style="background:#1d6f42; color:white; margin-bottom:15px;" onclick="exportToExcel()">📊 تصدير السجل إكسيل</button>
+            <table><thead><tr><th>التاريخ</th><th>النوع</th><th>المادة</th><th>العدد</th><th>المستودع</th><th>الجهة</th></tr></thead><tbody id="logsBody"></tbody></table>
+        </div>
+    </div>
+</div>
+
+<datalist id="itemsList"></datalist>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('asfour_v21_db')) || [];
+    let whs = JSON.parse(localStorage.getItem('asfour_v21_whs')) || ["المخزن الرئيسي"];
+    let logs = JSON.parse(localStorage.getItem('asfour_v21_logs')) || [];
+    let reservations = JSON.parse(localStorage.getItem('asfour_v21_res')) || [];
+    let tempInvoice = { in: [], out: [] };
+
+    // مساعد التنقل السريع بالكيبورد
+    function kbNav(e, nextId) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById(nextId).focus(); } }
+
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).style.display = 'block';
+        btn.classList.add('active');
+        renderData();
+    }
+
+    function addNewItem() {
+        const val = document.getElementById('newProdItem').value.trim();
+        if(!val || db.find(i => i.name === val)) return;
+        db.push({name: val, stocks: {}});
+        document.getElementById('newProdItem').value = '';
+        save();
+    }
+
+    function addNewWH() {
+        const val = document.getElementById('newWHName').value.trim();
+        if(!val || whs.includes(val)) return;
+        whs.push(val);
+        document.getElementById('newWHName').value = '';
+        save();
+    }
+
+    function addToInvoice(type) {
+        const name = document.getElementById(type+'Name').value;
+        const qty = parseInt(document.getElementById(type+'Qty').value) || 0;
+        const wh = document.getElementById(type+'WH').value;
+        const weight = parseFloat(document.getElementById(type+'Weight').value) || 0;
+        const sender = document.getElementById(type+'Sender').value;
+        const notes = document.getElementById(type+'Notes').value;
+        if(!db.find(i => i.name === name) || qty <= 0) return alert("تأكد من اختيار مادة صحيحة وكمية أكبر من صفر");
+        tempInvoice[type].push({ name, qty, wh, weight, sender, notes });
+        ['Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
+        document.getElementById(type+'Name').focus();
+        renderInvoice(type);
+    }
+
+    function renderInvoice(type) {
+        document.querySelector(`#${type}InvoiceTable tbody`).innerHTML = tempInvoice[type].map((item, idx) => `<tr><td>${item.name}</td><td>${item.qty}</td><td>${item.wh}</td><td onclick="tempInvoice['${type}'].splice(${idx},1);renderInvoice('${type}')" style="cursor:pointer; color:red;">✖</td></tr>`).join('');
+    }
+
+    function saveFinalInvoice(type) {
+        if(tempInvoice[type].length === 0) return;
+        tempInvoice[type].forEach(invItem => {
+            const item = db.find(i => i.name === invItem.name);
+            if(!item.stocks) item.stocks = {};
+            if(!item.stocks[invItem.wh]) item.stocks[invItem.wh] = 0;
+            if(type === 'in') item.stocks[invItem.wh] += invItem.qty;
+            else item.stocks[invItem.wh] -= invItem.qty;
+            logs.unshift({ date: new Date().toLocaleString('ar-EG'), ...invItem, type: type === 'in' ? 'داخل' : 'خارج' });
+        });
+        tempInvoice[type] = [];
+        renderInvoice(type);
+        save();
+    }
+
+    function addReservation() {
+        const name = document.getElementById('resName').value;
+        const qty = parseInt(document.getElementById('resQty').value) || 0;
+        const customer = document.getElementById('resCustomer').value;
+        if(!db.find(i => i.name === name) || qty <= 0) return;
+        reservations.push({ name, qty, customer, date: new Date().toLocaleString('ar-EG') });
+        save();
+    }
+
+    // تصدير السجل بصيغة CSV متوافقة مع Excel
+    function exportToExcel() {
+        let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الجهة;الوزن;ملاحظات\n";
+        logs.forEach(l => {
+            csv += `${l.date};${l.type};${l.name};${l.qty};${l.wh};${l.sender};${l.weight};${(l.notes||"").replace(/;/g, "-")}\n`;
+        });
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `عصفور_ستيل_سجل_الحركات.csv`;
+        link.click();
+    }
+
+    function save() {
+        localStorage.setItem('asfour_v21_db', JSON.stringify(db));
+        localStorage.setItem('asfour_v21_whs', JSON.stringify(whs));
+        localStorage.setItem('asfour_v21_logs', JSON.stringify(logs));
+        localStorage.setItem('asfour_v21_res', JSON.stringify(reservations));
+        renderData();
+    }
+
+    function renderData() {
+        document.getElementById('itemsList').innerHTML = db.map(i => `<option value="${i.name}">`).join('');
+        const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
+        if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
+        if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
+
+        document.getElementById('manageBody').innerHTML = db.map((i, idx) => {
+            let total = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+            let whDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<span class="wh-badge">${n}: ${v}</span>` : '').join('');
+            return `<tr><td>${i.name}</td><td>${whDetail}</td><td>${total}</td><td><span onclick="if(confirm('حذف؟')){db.splice(${idx},1);save()}" style="cursor:pointer;">🗑️</span></td></tr>`;
+        }).join('');
+
+        document.getElementById('resBody').innerHTML = reservations.map((r, idx) => `<tr><td>${r.name}</td><td>${r.qty}</td><td>${r.customer}</td><td onclick="reservations.splice(${idx},1);save()">🗑️</td></tr>`).join('');
+        document.getElementById('logsBody').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td>${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td>${l.sender}</td></tr>`).join('');
+        renderInventory();
+    }
+
+    function renderInventory() {
+        const q = document.getElementById('invSearch').value.toLowerCase();
+        let gQty = 0, gRes = 0;
+        document.getElementById('invBody').innerHTML = db.filter(i => i.name.toLowerCase().includes(q)).map(i => {
+            let total = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+            let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
+            let whDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<span class="wh-badge">${n}: ${v}</span>` : '').join('');
+            gQty += total; gRes += itemRes;
+            return `<tr><td>${i.name}</td><td>${whDetail}</td><td style="font-weight:bold; color:${(total-itemRes)<0?'red':'white'}">${total - itemRes}</td></tr>`;
+        }).join('');
+        document.getElementById('grandTotalQty').innerText = gQty;
+        document.getElementById('grandTotalRes').innerText = gRes;
+    }
+
+    renderData();
+</script>
+</body>
+</html>
