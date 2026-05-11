@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عصفور ستيل - النظام المتكامل للمخازن</title>
-    <!-- ربط ملف التنسيق الخارجي -->
+    <title>عصفور ستيل - النظام السحابي</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
 
 <div class="container">
-    <div class="header"><h1>ASFOUR STEEL</h1></div>
+    <div class="header"><h1>ASFOUR STEEL (Cloud)</h1></div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ المواد والمستودعات</button>
@@ -23,6 +21,7 @@
     </div>
 
     <div class="content">
+        <!-- إدارة المواد والمستودعات -->
         <div id="manage-view" class="tab-content">
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة..." onkeydown="if(event.key==='Enter') addNewItem()">
@@ -34,6 +33,7 @@
             </table>
         </div>
 
+        <!-- فواتير الداخل -->
         <div id="in-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="inName" list="itemsList" onkeydown="kbNav(event, 'inQty')"></div>
@@ -50,6 +50,7 @@
             </div>
         </div>
 
+        <!-- فواتير الخارج -->
         <div id="out-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="outName" list="itemsList" onkeydown="kbNav(event, 'outQty')"></div>
@@ -66,6 +67,7 @@
             </div>
         </div>
 
+        <!-- نظام الحجوزات -->
         <div id="res-view" class="tab-content" style="display:none;">
             <div class="form-row">
                 <div><label>المادة:</label><input type="text" id="resName" list="itemsList" onkeydown="kbNav(event, 'resQty')"></div>
@@ -80,6 +82,7 @@
             </table>
         </div>
 
+        <!-- الرصيد العام -->
         <div id="inventory-view" class="tab-content" style="display:none;">
             <div class="summary-dashboard">
                 <div class="dash-card"><h3>إجمالي الرصيد</h3><div id="grandTotalQty" class="value">0</div></div>
@@ -89,6 +92,7 @@
             <table><thead><tr><th>المادة</th><th>رصيد المستودعات</th><th>المتاح للبيع</th></tr></thead><tbody id="invBody"></tbody></table>
         </div>
 
+        <!-- السجل -->
         <div id="logs-view" class="tab-content" style="display:none;">
             <button class="btn" style="background:#1d6f42; color:white; margin-bottom:15px;" onclick="exportToExcel()">📊 تصدير السجل إكسيل</button>
             <table><thead><tr><th>التاريخ</th><th>النوع</th><th>المادة</th><th>العدد</th><th>المستودع</th><th>الجهة</th></tr></thead><tbody id="logsBody"></tbody></table>
@@ -98,7 +102,11 @@
 
 <datalist id="itemsList"></datalist>
 
-<!-- ربط ملف البرمجة الخارجي -->
+<!-- استدعاء مكتبات Firebase السحابية -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<!-- استدعاء ملف البرمجة الخاص بك -->
 <script src="script.js"></script>
+
 </body>
 </html>
