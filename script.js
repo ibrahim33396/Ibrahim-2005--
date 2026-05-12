@@ -1,47 +1,36 @@
-// بيانات الاتصال بقاعدة بيانات Firebase (يجب استبدالها ببيانات مشروعك)
-const firebaseConfig = {
-  apiKey: "ضع_هنا_API_KEY",
-  authDomain: "asfour-steel.firebaseapp.com",
-  databaseURL: "https://asfour-steel-default-rtdb.firebaseio.com",
-  projectId: "asfour-steel",
-  storageBucket: "asfour-steel.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
-};
+// --- إعدادات الحماية ---
+const PASSWORD = "123"; // يمكنك تغيير الرقم السري من هنا
 
-// بدء تشغيل Firebase
-firebase.initializeApp(firebaseConfig);
-const dbRef = firebase.database().ref('asfour_data');
-
-let db = [];
-let whs = ["المخزن الرئيسي"];
-let logs = [];
-let reservations = [];
-let tempInvoice = { in: [], out: [] };
-
-// الاستماع للبيانات من السحابة وتحديث الواجهة تلقائياً في جميع الأجهزة
-dbRef.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        db = data.items || [];
-        whs = data.warehouses || ["المخزن الرئيسي"];
-        logs = data.logs || [];
-        reservations = data.reservations || [];
-        renderData(); // تحديث الشاشة فوراً
+function login() {
+    const input = document.getElementById('adminPass').value;
+    const error = document.getElementById('loginError');
+    if (input === PASSWORD) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        sessionStorage.setItem('asfour_auth', 'true');
+        renderData();
+    } else {
+        error.style.display = 'block';
+        document.getElementById('adminPass').value = '';
     }
-});
-
-// حفظ البيانات في السحابة بدلاً من ذاكرة المتصفح
-function save() {
-    dbRef.set({
-        items: db,
-        warehouses: whs,
-        logs: logs,
-        reservations: reservations
-    });
 }
 
-// المساعدات والوظائف الأساسية
+// فحص الجلسة عند فتح الصفحة
+window.onload = function() {
+    if (sessionStorage.getItem('asfour_auth') === 'true') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        renderData();
+    }
+}
+
+// --- بقية منطق النظام الأصلي ---
+let db = JSON.parse(localStorage.getItem('asfour_v21_db')) || [];
+let whs = JSON.parse(localStorage.getItem('asfour_v21_whs')) || ["المخزن الرئيسي"];
+let logs = JSON.parse(localStorage.getItem('asfour_v21_logs')) || [];
+let reservations = JSON.parse(localStorage.getItem('asfour_v21_res')) || [];
+let tempInvoice = { in: [], out: [] };
+
 function kbNav(e, nextId) { if (e.key === 'Enter') { e.preventDefault(); document.getElementById(nextId).focus(); } }
 
 function switchTab(id, btn) {
@@ -75,7 +64,7 @@ function addToInvoice(type) {
     const weight = parseFloat(document.getElementById(type+'Weight').value) || 0;
     const sender = document.getElementById(type+'Sender').value;
     const notes = document.getElementById(type+'Notes').value;
-    if(!db.find(i => i.name === name) || qty <= 0) return alert("اختر مادة صحيحة وكمية أكبر من صفر");
+    if(!db.find(i => i.name === name) || qty <= 0) return alert("تأكد من اختيار مادة صحيحة وكمية أكبر من صفر");
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes });
     ['Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
     document.getElementById(type+'Name').focus();
@@ -122,7 +111,17 @@ function exportToExcel() {
     link.click();
 }
 
+function save() {
+    localStorage.setItem('asfour_v21_db', JSON.stringify(db));
+    localStorage.setItem('asfour_v21_whs', JSON.stringify(whs));
+    localStorage.setItem('asfour_v21_logs', JSON.stringify(logs));
+    localStorage.setItem('asfour_v21_res', JSON.stringify(reservations));
+    renderData();
+}
+
 function renderData() {
+    if (sessionStorage.getItem('asfour_auth') !== 'true') return;
+    
     document.getElementById('itemsList').innerHTML = db.map(i => `<option value="${i.name}">`).join('');
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;

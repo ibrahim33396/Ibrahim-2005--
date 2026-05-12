@@ -3,13 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عصفور ستيل - النظام السحابي</title>
+    <title>عصفور ستيل - تسجيل الدخول</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container">
-    <div class="header"><h1>ASFOUR STEEL (Cloud)</h1></div>
+<!-- واجهة تسجيل الدخول -->
+<div id="login-screen" class="login-container">
+    <div class="login-box">
+        <div class="header"><h1>ASFOUR STEEL</h1></div>
+        <div style="padding: 20px;">
+            <label style="text-align: center; display: block;">كلمة المرور المطلوبة</label>
+            <input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter') login()">
+            <button class="btn" style="background:var(--asfour-yellow); color:black; width:100%; margin-top:15px;" onclick="login()">دخول للنظام</button>
+            <p id="loginError" style="color:var(--danger); text-align:center; display:none; margin-top:10px; font-size:14px;">⚠️ كلمة المرور غير صحيحة!</p>
+        </div>
+    </div>
+</div>
+
+<!-- حاوية النظام الرئيسية (مخفية افتراضياً) -->
+<div class="container" id="main-app" style="display:none;">
+    <div class="header"><h1>ASFOUR STEEL</h1></div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ المواد والمستودعات</button>
@@ -21,7 +35,7 @@
     </div>
 
     <div class="content">
-        <!-- إدارة المواد والمستودعات -->
+        <!-- صفحة إدارة المواد -->
         <div id="manage-view" class="tab-content">
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة..." onkeydown="if(event.key==='Enter') addNewItem()">
@@ -33,7 +47,7 @@
             </table>
         </div>
 
-        <!-- فواتير الداخل -->
+        <!-- فاتورة داخل -->
         <div id="in-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="inName" list="itemsList" onkeydown="kbNav(event, 'inQty')"></div>
@@ -50,7 +64,7 @@
             </div>
         </div>
 
-        <!-- فواتير الخارج -->
+        <!-- فاتورة خارج -->
         <div id="out-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="outName" list="itemsList" onkeydown="kbNav(event, 'outQty')"></div>
@@ -67,7 +81,7 @@
             </div>
         </div>
 
-        <!-- نظام الحجوزات -->
+        <!-- الحجوزات -->
         <div id="res-view" class="tab-content" style="display:none;">
             <div class="form-row">
                 <div><label>المادة:</label><input type="text" id="resName" list="itemsList" onkeydown="kbNav(event, 'resQty')"></div>
@@ -82,7 +96,7 @@
             </table>
         </div>
 
-        <!-- الرصيد العام -->
+        <!-- الرصيد -->
         <div id="inventory-view" class="tab-content" style="display:none;">
             <div class="summary-dashboard">
                 <div class="dash-card"><h3>إجمالي الرصيد</h3><div id="grandTotalQty" class="value">0</div></div>
@@ -101,12 +115,6 @@
 </div>
 
 <datalist id="itemsList"></datalist>
-
-<!-- استدعاء مكتبات Firebase السحابية -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<!-- استدعاء ملف البرمجة الخاص بك -->
 <script src="script.js"></script>
-
 </body>
 </html>
