@@ -8,7 +8,6 @@
 </head>
 <body>
 
-<!-- واجهة تسجيل الدخول -->
 <div id="login-screen" class="login-container">
     <div class="login-box">
         <div class="header"><h1>ASFOUR STEEL</h1></div>
@@ -21,95 +20,107 @@
     </div>
 </div>
 
-<!-- حاوية النظام الرئيسية (مخفية افتراضياً) -->
 <div class="container" id="main-app" style="display:none;">
     <div class="header"><h1>ASFOUR STEEL</h1></div>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ المواد والمستودعات</button>
-        <button class="tab-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
-        <button class="tab-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
+        <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ إدارة التعريفات</button>
+        <button class="tab-btn" id="tab-stock-btn" onclick="switchTab('stock-view', this)">📋 جرد المواد والأوزان</button>
+        <button class="tab-btn" id="tab-in-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
+        <button class="tab-btn" id="tab-out-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
         <button class="tab-btn" onclick="switchTab('res-view', this)">🔒 الحجوزات</button>
-        <button class="tab-btn" onclick="switchTab('inventory-view', this)">📊 الرصيد</button>
-        <button class="tab-btn" onclick="switchTab('logs-view', this)">📋 السجل</button>
+        <button class="tab-btn" onclick="switchTab('inventory-view', this)">📊 الرصيد المتاح للبيع</button>
+        <button class="tab-btn" onclick="switchTab('logs-view', this)">📋 السجل العام</button>
     </div>
 
     <div class="content">
-        <!-- صفحة إدارة المواد -->
         <div id="manage-view" class="tab-content">
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة..." onkeydown="if(event.key==='Enter') addNewItem()">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة بالسيستم..." onkeydown="if(event.key==='Enter') addNewItem()">
                 <input type="text" id="newWHName" placeholder="إضافة مستودع جديد..." onkeydown="if(event.key==='Enter') addNewWH()">
             </div>
             <table>
-                <thead><tr><th>المادة</th><th>توزيع المستودعات</th><th>الإجمالي</th><th>الإجراء</th></tr></thead>
+                <thead><tr><th>قائمة المواد المسجلة الحالية</th><th>الإجراء</th></tr></thead>
                 <tbody id="manageBody"></tbody>
             </table>
         </div>
 
-        <!-- فاتورة داخل -->
+        <div id="stock-view" class="tab-content" style="display:none;">
+            <h3 style="margin-bottom:10px; color:var(--asfour-yellow);">📋 تقرير جرد كميات وأوزان المستودعات الحالية</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <input type="text" id="stockSearch" onkeyup="renderData()" placeholder="ابحث هنا عن صنف معين (اضغط على اسم المادة لاختيارها والفوترة)..." style="flex: 1;">
+                <button class="btn" style="background:#1d6f42; color:white; padding: 0 20px;" onclick="exportInventoryToExcel()">📊 تصدير الجرد الحالي إكسيل</button>
+            </div>
+            <table>
+                <thead><tr><th>اسم المادة (اضغط للفوترة)</th><th>تفصيل الرصيد بالقطع</th><th>تفصيل الأوزان الحالية (كجم)</th><th>إجمالي القطع</th></tr></thead>
+                <tbody id="stockBody"></tbody>
+            </table>
+        </div>
+
         <div id="in-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="inName" list="itemsList" onkeydown="kbNav(event, 'inQty')"></div>
-                <div><label>العدد:</label><input type="number" id="inQty" onkeydown="kbNav(event, 'inWH')"></div>
+                <div><label>العدد (القطع):</label><input type="number" id="inQty" onkeydown="kbNav(event, 'inWH')"></div>
                 <div><label>المستودع:</label><select id="inWH" onkeydown="kbNav(event, 'inWeight')"></select></div>
-                <div><label>الوزن:</label><input type="number" id="inWeight" onkeydown="kbNav(event, 'inSender')"></div>
-                <div><label>المورد:</label><input type="text" id="inSender" onkeydown="kbNav(event, 'inNotes')"></div>
+                <div><label>الوزن الكلي (كجم):</label><input type="number" step="0.01" id="inWeight" onkeydown="kbNav(event, 'inSender')"></div>
+                <div><label>المورد / الجهة:</label><input type="text" id="inSender" onkeydown="kbNav(event, 'inNotes')"></div>
             </div>
-            <div><label>ملاحظات:</label><input type="text" id="inNotes" onkeydown="if(event.key==='Enter') addToInvoice('in')"></div>
+            <div><label>ملاحظات الفاتورة:</label><input type="text" id="inNotes" onkeydown="if(event.key==='Enter') addToInvoice('in')"></div>
             <button class="btn" style="background:var(--blue); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('in')">➕ إضافة للمسودة (Enter)</button>
             <div class="invoice-area">
-                <table id="inInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>حذف</th></tr></thead><tbody></tbody></table>
-                <button class="btn" style="background:var(--success); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('in')">✅ حفظ وترحيل الفاتورة</button>
+                <table id="inInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن المشحون</th><th>تعديل/حذف</th></tr></thead><tbody></tbody></table>
+                <button class="btn" style="background:var(--success); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('in')">✅ حفظ وترحيل الفاتورة السحابية</button>
             </div>
         </div>
 
-        <!-- فاتورة خارج -->
         <div id="out-view" class="tab-content" style="display:none;">
             <div class="form-row wh-row">
                 <div><label>المادة:</label><input type="text" id="outName" list="itemsList" onkeydown="kbNav(event, 'outQty')"></div>
-                <div><label>العدد:</label><input type="number" id="outQty" onkeydown="kbNav(event, 'outWH')"></div>
+                <div><label>العدد (القطع):</label><input type="number" id="outQty" onkeydown="kbNav(event, 'outWH')"></div>
                 <div><label>المستودع:</label><select id="outWH" onkeydown="kbNav(event, 'outWeight')"></select></div>
-                <div><label>الوزن:</label><input type="number" id="outWeight" onkeydown="kbNav(event, 'outSender')"></div>
-                <div><label>المستلم:</label><input type="text" id="outSender" onkeydown="kbNav(event, 'outNotes')"></div>
+                <div><label>الوزن الكلي (كجم):</label><input type="number" step="0.01" id="outWeight" onkeydown="kbNav(event, 'outSender')"></div>
+                <div><label>المستلم / الزبون:</label><input type="text" id="outSender" onkeydown="kbNav(event, 'outNotes')"></div>
             </div>
-            <div><label>ملاحظات:</label><input type="text" id="outNotes" onkeydown="if(event.key==='Enter') addToInvoice('out')"></div>
+            <div><label>ملاحظات الفاتورة:</label><input type="text" id="outNotes" onkeydown="if(event.key==='Enter') addToInvoice('out')"></div>
             <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('out')">📤 إضافة للمسودة (Enter)</button>
             <div class="invoice-area">
-                <table id="outInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>حذف</th></tr></thead><tbody></tbody></table>
-                <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('out')">✅ خصم الكميات من المخازن</button>
+                <table id="outInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن الصادر</th><th>تعديل/حذف</th></tr></thead><tbody></tbody></table>
+                <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('out')">✅ خصم الكميات وترحيل الفاتورة</button>
             </div>
         </div>
 
-        <!-- الحجوزات -->
         <div id="res-view" class="tab-content" style="display:none;">
             <div class="form-row">
                 <div><label>المادة:</label><input type="text" id="resName" list="itemsList" onkeydown="kbNav(event, 'resQty')"></div>
-                <div><label>العدد:</label><input type="number" id="resQty" onkeydown="kbNav(event, 'resCustomer')"></div>
-                <div><label>الزبون:</label><input type="text" id="resCustomer" onkeydown="kbNav(event, 'resNotes')"></div>
-                <div><label>ملاحظات:</label><input type="text" id="resNotes" onkeydown="if(event.key==='Enter') addReservation()"></div>
+                <div><label>العدد الكلي للقطع:</label><input type="number" id="resQty" onkeydown="kbNav(event, 'resCustomer')"></div>
+                <div><label>اسم الزبون المعني:</label><input type="text" id="resCustomer" onkeydown="kbNav(event, 'resNotes')"></div>
+                <div><label>ملاحظات إضافية:</label><input type="text" id="resNotes" onkeydown="if(event.key==='Enter') addReservation()"></div>
             </div>
-            <button class="btn" style="background:var(--orange); color:white; width:100%;" onclick="addReservation()">🔒 تثبيت الحجز (Enter)</button>
+            <button class="btn" style="background:var(--orange); color:white; width:100%; margin-top:10px;" onclick="addReservation()">🔒 تثبيت الحجز في السحابة (Enter)</button>
             <table style="margin-top:20px;">
-                <thead><tr><th>المادة</th><th>العدد</th><th>الزبون</th><th>حذف</th></tr></thead>
+                <thead><tr><th>المادة</th><th>العدد المحجوز</th><th>اسم الزبون</th><th>إلغاء الحجز</th></tr></thead>
                 <tbody id="resBody"></tbody>
             </table>
         </div>
 
-        <!-- الرصيد -->
         <div id="inventory-view" class="tab-content" style="display:none;">
             <div class="summary-dashboard">
-                <div class="dash-card"><h3>إجمالي الرصيد</h3><div id="grandTotalQty" class="value">0</div></div>
-                <div class="dash-card"><h3>إجمالي المحجوز 🔒</h3><div id="grandTotalRes" class="value" style="color:var(--orange)">0</div></div>
+                <div class="dash-card"><h3>إجمالي رصيد القطع</h3><div id="grandTotalQty" class="value">0</div></div>
+                <div class="dash-card"><h3>إجمالي القطع المحجوزة 🔒</h3><div id="grandTotalRes" class="value" style="color:var(--orange)">0</div></div>
             </div>
-            <input type="text" id="invSearch" onkeyup="renderInventory()" placeholder="بحث في الأصناف...">
-            <table><thead><tr><th>المادة</th><th>رصيد المستودعات</th><th>المتاح للبيع</th></tr></thead><tbody id="invBody"></tbody></table>
+            <input type="text" id="invSearch" onkeyup="renderInventory()" placeholder="ابحث هنا عن صنف لمعرفة المتاح الفعلي للبيع الحالي...">
+            <table>
+                <thead><tr><th>اسم المادة</th><th>إجمالي المتوفر بالهناقر</th><th>الصافي المتاح للبيع (بعد خصم الحجوزات)</th></tr></thead>
+                <tbody id="invBody"></tbody>
+            </table>
         </div>
 
-        <!-- السجل -->
         <div id="logs-view" class="tab-content" style="display:none;">
-            <button class="btn" style="background:#1d6f42; color:white; margin-bottom:15px;" onclick="exportToExcel()">📊 تصدير السجل إكسيل</button>
-            <table><thead><tr><th>التاريخ</th><th>النوع</th><th>المادة</th><th>العدد</th><th>المستودع</th><th>الجهة</th></tr></thead><tbody id="logsBody"></tbody></table>
+            <button class="btn" style="background:#1d6f42; color:white; margin-bottom:15px;" onclick="exportToExcel()">📊 تصدير السجل العام إكسيل (Excel)</button>
+            <table>
+                <thead><tr><th>التاريخ والوقت</th><th>حركة الحركة</th><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن (كجم)</th><th>الجهة/المستلم</th></tr></thead>
+                <tbody id="logsBody"></tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -117,7 +128,6 @@
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <script src="script.js"></script>
 
 </body>
