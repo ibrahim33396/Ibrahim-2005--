@@ -1,4 +1,4 @@
-// إعدادات Firebase الخاصة بمشروعك (إبراهيم) - ثابتة ومحمية كما هي
+// إعدادات Firebase الخاصة بمشروعك (إبراهيم) - ثابته ومحمية
 const firebaseConfig = {
   apiKey: "AIzaSyDlv0ygMBeIVLQo2AzDIrHzGb_AeDDh-q0",
   authDomain: "ibrahim-f988d.firebaseapp.com",
@@ -10,7 +10,6 @@ const firebaseConfig = {
   measurementId: "G-XMWFJ3HGNP"
 };
 
-// بدء تشغيل وتفعيل اتصال Firebase السحابي
 firebase.initializeApp(firebaseConfig);
 const dbRef = firebase.database().ref('asfour_data');
 
@@ -20,11 +19,9 @@ let logs = [];
 let reservations = [];
 let tempInvoice = { in: [], out: [] };
 
-// متغيرات حفظ المادة المختار عزلها بالماوس
 let selectedStockItem = null;
 let selectedInventoryItem = null;
 
-// دالة تسجيل الدخول والتحقق من كلمة المرور
 function login() {
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
@@ -40,7 +37,6 @@ function login() {
     }
 }
 
-// الاستماع للبيانات من السحابة وتحديث الواجهة تلقائياً
 dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -54,7 +50,6 @@ dbRef.on('value', (snapshot) => {
     }
 });
 
-// حفظ البيانات في السحابة
 function save() {
     dbRef.set({
         items: db,
@@ -64,11 +59,27 @@ function save() {
     });
 }
 
-// دالة الملاحة الذكية بالكيبورد (Enter ينقلك للخانة التالية فوراً)
+function setDefaultDates() {
+    const today = new Date().toISOString().split('T')[0];
+    if(document.getElementById('inDate')) document.getElementById('inDate').value = today;
+    if(document.getElementById('outDate')) document.getElementById('outDate').value = today;
+}
+
 function kbNav(e, nextId) { 
     if (e.key === 'Enter') { 
         e.preventDefault(); 
-        document.getElementById(nextId).focus(); 
+        if (nextId === 'SUBMIT_IN') {
+            addToInvoice('in');
+            document.getElementById('inName').focus();
+        } else if (nextId === 'SUBMIT_OUT') {
+            addToInvoice('out');
+            document.getElementById('outName').focus();
+        } else if (nextId === 'SUBMIT_RES') {
+            addReservation();
+            document.getElementById('resName').focus();
+        } else {
+            document.getElementById(nextId).focus(); 
+        }
     } 
 }
 
@@ -104,25 +115,38 @@ function addToInvoice(type) {
     const sender = document.getElementById(type+'Sender').value.trim();
     const notes = document.getElementById(type+'Notes').value.trim();
     
-    if(!db.find(i => i.name === name) || qty <= 0) return alert("اختر مادة مسجلة صحيحة وكمية قطع أكبر من الصفر");
+    let rawDate = document.getElementById(type+'Date').value;
+    if(!rawDate) rawDate = new Date().toISOString().split('T')[0];
+    const formattedDate = rawDate.split('-').reverse().join('/');
+
+    if(!db.find(i => i.name === name) || qty <= 0) return alert("اختر مادة وكمية صحيحة");
     
-    tempInvoice[type].push({ name, qty, wh, weight, sender, notes });
-    
+    tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
     ['Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
-    document.getElementById(type+'Name').focus();
     renderInvoice(type);
 }
 
 function renderInvoice(type) {
-    document.querySelector(`#${type}InvoiceTable tbody`).innerHTML = tempInvoice[type].map((item, idx) => `
+    let totalInvoiceWeight = tempInvoice[type].reduce((sum, item) => sum + item.weight, 0);
+    
+    let tableBody = tempInvoice[type].map((item, idx) => `
         <tr>
             <td>${item.name}</td>
-            <td>${item.qty} قطعة</td>
+            <td>${item.qty} ق</td>
             <td>${item.wh}</td>
             <td style="font-weight:bold; color:var(--asfour-yellow);">${item.weight.toFixed(2)} كجم</td>
-            <td onclick="editInvoiceItem('${type}', ${idx})" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل/إرجاع</td>
+            <td onclick="editInvoiceItem('${type}', ${idx})" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</td>
         </tr>
     `).join('');
+
+    if(tempInvoice[type].length > 0) {
+        tableBody += `
+            <tr style="background: #222; font-weight: bold; color: var(--asfour-yellow);">
+                <td colspan="3" style="text-align: left;">⚖️ الإجمالي:</td>
+                <td colspan="2" style="color: lightgreen;">${totalInvoiceWeight.toFixed(2)} كجم</td>
+            </tr>`;
+    }
+    document.querySelector(`#${type}InvoiceTable tbody`).innerHTML = tableBody;
 }
 
 function editInvoiceItem(type, idx) {
@@ -134,6 +158,10 @@ function editInvoiceItem(type, idx) {
     document.getElementById(type+'Sender').value = item.sender;
     document.getElementById(type+'Notes').value = item.notes;
     
+    if(item.date) {
+        const parts = item.date.split('/');
+        document.getElementById(type+'Date').value = `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
     tempInvoice[type].splice(idx, 1); 
     renderInvoice(type);
     document.getElementById(type+'Qty').focus(); 
@@ -141,6 +169,21 @@ function editInvoiceItem(type, idx) {
 
 function saveFinalInvoice(type) {
     if(tempInvoice[type].length === 0) return;
+    let hasError = false;
+
+    if (type === 'out') {
+        tempInvoice[type].forEach(invItem => {
+            const item = db.find(i => i.name === invItem.name);
+            let currentStock = item && item.stocks && item.stocks[invItem.wh] ? item.stocks[invItem.wh] : 0;
+            if (currentStock < invItem.qty) {
+                alert(`🚨 خطأ!\n[ ${invItem.name} ] رصيده في [ ${invItem.wh} ] هو (${currentStock}) فقط.`);
+                hasError = true;
+            }
+        });
+    }
+
+    if (hasError) return;
+
     tempInvoice[type].forEach(invItem => {
         const item = db.find(i => i.name === invItem.name);
         if(!item.stocks) item.stocks = {};
@@ -156,16 +199,13 @@ function saveFinalInvoice(type) {
             item.weights[invItem.wh] -= invItem.weight;
         }
         
-        logs.unshift({ 
-            date: new Date().toLocaleString('ar-EG'), 
-            ...invItem, 
-            type: type === 'in' ? 'داخل' : 'خارج' 
-        });
+        logs.unshift({ ...invItem, type: type === 'in' ? 'داخل' : 'خارج' });
     });
     tempInvoice[type] = [];
     renderInvoice(type);
     save();
-    alert("تم ترحيل الفاتورة وحفظ الأوزان والقطع سحابياً بنجاح!");
+    setDefaultDates();
+    alert("تم حفظ الفاتورة سحابياً!");
 }
 
 function addReservation() {
@@ -174,24 +214,56 @@ function addReservation() {
     const customer = document.getElementById('resCustomer').value.trim();
     const notes = document.getElementById('resNotes').value.trim();
     
-    if(!db.find(i => i.name === name) || qty <= 0) return alert("اختر مادة صحيحة وعدد حقيقي");
+    const item = db.find(i => i.name === name);
+    if(!item || qty <= 0) return alert("اختر مادة صحيحة");
     
-    reservations.push({ name, qty, customer, notes, date: new Date().toLocaleString('ar-EG') });
+    let targetWH = whs[0] || "المخزن الرئيسي";
+    let currentStock = item.stocks && item.stocks[targetWH] ? item.stocks[targetWH] : 0;
+
+    if (currentStock < qty) {
+        return alert(`🚨 عذراً! الرصيد لا يكفي الحجز.`);
+    }
+
+    if (!item.stocks) item.stocks = {};
+    if (!item.stocks[targetWH]) item.stocks[targetWH] = 0;
+
+    item.stocks[targetWH] -= qty;
+    
+    const todayDate = new Date().toLocaleDateString('ar-EG');
+    reservations.push({ name, qty, customer, notes, wh: targetWH, date: todayDate });
     ['resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('resName').focus();
     save();
 }
 
-// 🎯 دالة التصدير الذكية والمحدثة: تقوم بالتصدير بناءً على ما هو معروض (الصنف المختار فقط أو كل الأصناف)
+function removeReservation(idx) {
+    if(confirm('هل تريد إلغاء الحجز وإعادة المواد للمستودع؟')) {
+        const res = reservations[idx];
+        const item = db.find(i => i.name === res.name);
+        if(item && item.stocks) {
+            let targetWH = res.wh || whs[0] || "المخزن الرئيسي";
+            if(!item.stocks[targetWH]) item.stocks[targetWH] = 0;
+            item.stocks[targetWH] += res.qty; 
+        }
+        reservations.splice(idx, 1);
+        save();
+    }
+}
+
+// تعديل: الحذف هنا يمسح الحركة من جدول الأرشيف العام فقط ولا يؤثر على المخازن نهائياً
+function deleteLogItem(idx) {
+    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟ (لن يؤثر على رصيد المخزن الحالي)")) {
+        logs.splice(idx, 1); 
+        save();
+        alert("تم مسح بند الحركة من الأرشيف بنجاح!");
+    }
+}
+
 function exportInventoryToExcel() {
-    let csv = "\uFEFFالمادة;المستودع;الرصيد الحالي (قطع);الوزن الحالي (كجم)\n";
-    
-    // إذا كان هناك مادة مختارة بالماوس، نُصدّرها هي فقط، وإلا نُصدّر قاعدة البيانات كاملة
+    let csv = "\uFEFFالمادة;المستودع;الرصيد;الوزن\n";
     let itemsToExport = db;
     if (selectedStockItem) {
         itemsToExport = db.filter(i => i.name === selectedStockItem);
     }
-    
     itemsToExport.forEach(i => {
         whs.forEach(w => {
             let q = i.stocks && i.stocks[w] ? i.stocks[w] : 0;
@@ -201,76 +273,93 @@ function exportInventoryToExcel() {
             }
         });
     });
-    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    
-    // تخصيص اسم الملف ليحمل اسم المادة لو كانت معزولة ومحددة
-    let fileName = selectedStockItem ? `جرد_مادة_${selectedStockItem}` : "عصفور_ستيل_تقرير_الجرد_الأوزان";
+    let fileName = selectedStockItem ? `جرد_${selectedStockItem}` : "تقرير_الجرد";
     link.download = `${fileName}_${new Date().toLocaleDateString('ar-EG')}.csv`;
     link.click();
 }
 
 function exportToExcel() {
-    let csv = "\uFEFFالتاريخ;النوع;المادة;العدد الكلي;المستودع;الوزن (كجم);الجهة/الزبون;ملاحظات\n";
+    let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة;ملاحظات\n";
     logs.forEach(l => {
         csv += `${l.date};${l.type};${l.name};${l.qty};${l.wh};${l.weight};${l.sender};${(l.notes||"")}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `عصفور_ستيل_سجل_الحركات.csv`;
+    link.download = `أرشيف_الحركات.csv`;
     link.click();
 }
 
 function renderData() {
+    if((document.getElementById('inDate') && !document.getElementById('inDate').value) || (document.getElementById('outDate') && !document.getElementById('outDate').value)) {
+        setDefaultDates();
+    }
+
     document.getElementById('itemsList').innerHTML = db.map(i => `<option value="${i.name}">`).join('');
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
     if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
 
-    // 1. جدول إدارة التعريفات والمواد
     document.getElementById('manageBody').innerHTML = db.map((i, idx) => `
         <tr>
             <td style="font-weight:bold;">${i.name}</td>
-            <td><span onclick="if(confirm('هل تريد حذف المادة نهائياً من السيستم؟')){db.splice(${idx},1);save()}" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف الصنف</span></td>
+            <td><span onclick="if(confirm('حذف الصنف نهائياً؟')){db.splice(${idx},1);save()}" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف</span></td>
         </tr>
     `).join('');
 
-    // 2. جدول جرد المواد والأوزان التفصيلي مع ميزة عزل صنف واحد لرؤية تفاصيله
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
-    
     let filteredStockDb = db.filter(i => i.name.toLowerCase().includes(stockSearchQuery));
     if (selectedStockItem) {
         filteredStockDb = filteredStockDb.filter(i => i.name === selectedStockItem);
     }
 
+    let globalTotalWeight = 0; 
+
     document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
         let totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+        let itemTotalWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+        globalTotalWeight += itemTotalWeight; 
         
-        let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div style="margin-bottom:3px;">📍 ${n}: <b>${v} قطعة</b></div>` : '').join('');
-        let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="margin-bottom:3px; color:var(--asfour-yellow); font-weight:bold;">⚖️ ${n}: <b>${w.toFixed(2)} كجم</b></div>` : '').join('');
+        let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div style="margin-bottom:2px;">📍 ${n}: <b>${v} ق</b></div>` : '').join('');
+        let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="margin-bottom:2px; color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
         
         let nameDisplay = selectedStockItem 
-            ? `${i.name} <span onclick="selectedStockItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:12px; cursor:pointer; background:#222; padding:2px 6px; border-radius:4px; margin-right:10px;">❌ إلغاء الاختيار</span>`
-            : `<span style="cursor:pointer; color:#3498db; text-decoration:underline;">${i.name}</span>`;
+            ? `${i.name} <span onclick="selectedStockItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:11px; cursor:pointer;">[إلغاء]</span>`
+            : `<span style="cursor:pointer; color:#3498db;">${i.name}</span>`;
 
         return `
             <tr onclick="if(!selectedStockItem){ selectedStockItem='${i.name}'; renderData(); }">
-                <td style="font-weight:bold; font-size:16px;">${nameDisplay}</td>
-                <td>${piecesDetail || '<span style="color:gray;">لا توجد قطع</span>'}</td>
-                <td>${weightsDetail || '<span style="color:gray;">لا يوجد وزن</span>'}</td>
-                <td style="font-weight:bold; font-size:15px; color:white;">${totalPieces} قطعة إجمالي</td>
+                <td style="font-weight:bold;">${nameDisplay}</td>
+                <td>${piecesDetail || '-'}</td>
+                <td>${weightsDetail || '-'}</td>
+                <td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td>
             </tr>`;
     }).join('');
 
-    document.getElementById('resBody').innerHTML = reservations.map((r, idx) => `<tr><td>${r.name}</td><td>${r.qty} قطعة</td><td>${r.customer}</td><td onclick="if(confirm('إلغاء الحجز؟')){reservations.splice(${idx},1);save()}" style="cursor:pointer; color:red;">🗑️ إلغاء</td></tr>`).join('');
-    document.getElementById('logsBody').innerHTML = logs.map(l => `<tr><td>${l.date}</td><td style="color:${l.type==='داخل'?'lightgreen':'coral'}">${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td style="font-weight:bold;">${l.weight.toFixed(2)} كجم</td><td>${l.sender}</td></tr>`).join('');
+    if(document.getElementById('grandTotalWeight')) {
+        document.getElementById('grandTotalWeight').innerText = globalTotalWeight.toFixed(1) + " كجم";
+    }
+
+    document.getElementById('resBody').innerHTML = reservations.map((r, idx) => `<tr><td>${r.name}</td><td>${r.qty} ق</td><td>${r.customer}</td><td onclick="removeReservation(${idx})" style="cursor:pointer; color:red;">🗑️ إلغاء</td></tr>`).join('');
+    
+    document.getElementById('logsBody').innerHTML = logs.map((l, idx) => `
+        <tr>
+            <td>${l.date}</td>
+            <td style="color:${l.type==='داخل'?'lightgreen':'coral'}">${l.type}</td>
+            <td>${l.name}</td>
+            <td>${l.qty}</td>
+            <td>${l.wh}</td>
+            <td>${l.weight.toFixed(1)}</td>
+            <td>${l.sender}</td>
+            <td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td>
+        </tr>`).join('');
+        
     renderInventory();
 }
 
-// 3. جدول الرصيد المتاح للبيع الفعلي
 function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     let gQty = 0, gRes = 0;
@@ -283,22 +372,23 @@ function renderInventory() {
     document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
         let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
         let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
-        gQty += totalQty; 
+        
+        gQty += (totalQty + itemRes); 
         gRes += itemRes;
-        let netAvailable = totalQty - itemRes;
+        let netAvailable = totalQty; 
         
         let nameDisplay = selectedInventoryItem 
-            ? `${i.name} <span onclick="selectedInventoryItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:12px; cursor:pointer; background:#222; padding:2px 6px; border-radius:4px; margin-right:10px;">❌ إلغاء الاختيار</span>`
-            : `<span style="cursor:pointer; color:#3498db; text-decoration:underline;">${i.name}</span>`;
+            ? `${i.name} <span onclick="selectedInventoryItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:11px; cursor:pointer;">[إلغاء]</span>`
+            : `<span style="cursor:pointer; color:#3498db;">${i.name}</span>`;
 
         return `
             <tr onclick="if(!selectedInventoryItem){ selectedInventoryItem='${i.name}'; renderData(); }">
-                <td style="font-weight:bold; font-size:16px;">${nameDisplay}</td>
-                <td>${totalQty} قطعة متوفرة</td>
-                <td style="font-weight:bold; font-size:15px; color:${netAvailable < 0 ? 'var(--danger)' : 'lightgreen'}">${netAvailable} قطعة جاهزة للبيع</td>
+                <td style="font-weight:bold;">${nameDisplay}</td>
+                <td>${totalQty + itemRes} ق</td>
+                <td style="font-weight:bold; color:${netAvailable < 0 ? 'var(--danger)' : 'lightgreen'}">${netAvailable} ق</td>
             </tr>`;
     }).join('');
     
-    document.getElementById('grandTotalQty').innerText = gQty + " قطعة  ";
-    document.getElementById('grandTotalRes').innerText = gRes + " قطعة محجوزة";
+    document.getElementById('grandTotalQty').innerText = gQty + " قطعة";
+    document.getElementById('grandTotalRes').innerText = gRes + " قطعة";
 }

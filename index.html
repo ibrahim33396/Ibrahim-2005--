@@ -2,132 +2,490 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عصفور ستيل - تسجيل الدخول</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>عصفور ستيل - إدارة المخازن</title>
+    <style>
+        :root {
+            --asfour-dark: #111111;
+            --asfour-panel: #1a1a1a;
+            --asfour-yellow: #f1c40f;
+            --text-main: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #333333;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --orange: #e67e22;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--asfour-dark);
+            color: var(--text-main);
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--asfour-yellow);
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--asfour-yellow);
+            font-size: 22px;
+        }
+
+        #login-screen {
+            max-width: 360px;
+            margin: 60px auto;
+            background: var(--asfour-panel);
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        /* شريط التبويبات المنسق للجوال والكمبيوتر */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin;
+        }
+
+        .tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .tabs::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .tab-btn {
+            background: var(--asfour-panel);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            white-space: nowrap;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--asfour-yellow);
+            color: var(--asfour-dark);
+            border-color: var(--asfour-yellow);
+        }
+
+        .tab-content {
+            background: var(--asfour-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            display: none;
+        }
+
+        /* شبكة الحقول المرنة */
+        .form-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 15px;
+            align-items: end;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            background: #222;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            border-radius: 5px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--asfour-yellow);
+        }
+
+        input[type="date"] {
+            color-scheme: dark;
+        }
+
+        button.btn-primary {
+            background: var(--asfour-yellow);
+            color: var(--asfour-dark);
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        button.btn-action {
+            background: var(--orange);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: right;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        th {
+            background: #252525;
+            color: var(--asfour-yellow);
+        }
+
+        tr:hover {
+            background: #202020;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: #222;
+            padding: 12px;
+            border-radius: 6px;
+            border-right: 4px solid var(--asfour-yellow);
+        }
+
+        .stat-card.res {
+            border-right-color: var(--orange);
+        }
+
+        .stat-card h3 {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 3px;
+        }
+
+        .stat-card p {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .error-msg {
+            color: var(--danger);
+            margin-top: 10px;
+            display: none;
+            font-weight: bold;
+        }
+
+        /* تحسينات خاصة لملائمة شاشات الموبايل الصغيرة جداً */
+        @media (max-width: 600px) {
+            body { padding: 5px; }
+            h1 { font-size: 18px; }
+            .tab-content { padding: 10px; }
+            th, td { padding: 8px 5px; font-size: 12px; }
+            .form-group { grid-template-columns: 1fr 1fr; } /* حقلين في كل سطر بالجوال */
+            .form-group button { grid-column: span 2; } /* زر الإضافة يأخذ السطر كاملاً */
+        }
+    </style>
 </head>
 <body>
 
-<div id="login-screen" class="login-container">
-    <div class="login-box">
-        <div class="header"><h1>ASFOUR STEEL</h1></div>
-        <div style="padding: 20px;">
-            <label style="text-align: center; display: block;">كلمة المرور المطلوبة</label>
-            <input type="password" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter') login()">
-            <button class="btn" style="background:var(--asfour-yellow); color:black; width:100%; margin-top:15px;" onclick="login()">دخول للنظام</button>
-            <p id="loginError" style="color:var(--danger); text-align:center; display:none; margin-top:10px; font-size:14px;">⚠️ كلمة المرور غير صحيحة!</p>
+<div class="container">
+
+    <div id="login-screen">
+        <h2 style="color: var(--asfour-yellow); margin-bottom: 15px; font-size: 18px;">🔒 دخول عصفور ستيل</h2>
+        <input type="password" id="adminPass" placeholder="الرمز السرّي" style="text-align: center; margin-bottom: 12px;" onkeydown="if(event.key==='Enter') login()">
+        <button class="btn-primary" onclick="login()">دخول ومزامنة</button>
+        <p id="loginError" class="error-msg">❌ الرمز غير صحيح</p>
+    </div>
+
+    <div id="main-app" style="display: none;">
+        <header>
+            <div>
+                <h1>ASFOUR STEEL</h1>
+            </div>
+            <div>
+                <span style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('stock-view', this)">📊 الجرد الكلي</button>
+            <button class="tab-btn" onclick="switchTab('inv-view', this)">🏪 المتاح للبيع</button>
+            <button class="tab-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
+            <button class="tab-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
+            <button class="tab-btn" onclick="switchTab('res-view', this)">🔒 المحجوزات</button>
+            <button class="tab-btn" onclick="switchTab('logs-view', this)">📜 الأرشيف العام</button>
+            <button class="tab-btn" onclick="switchTab('setup-view', this)">⚙️ الإعدادات</button>
         </div>
+
+        <div id="stock-view" class="tab-content" style="display: block;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                <input type="text" id="stockSearch" placeholder="🔍 بحث عن صنف..." oninput="renderData()" style="max-width: 250px;">
+                <button class="btn-primary" onclick="exportInventoryToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px;">📊 تصدير Excel</button>
+            </div>
+            <div class="table-container">
+                <table id="stockTable">
+                    <thead>
+                        <tr>
+                            <th>المادة</th>
+                            <th>القطع بمستودعك</th>
+                            <th>الوزن بمستودعك</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stockBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="inv-view" class="tab-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>رصيد الهناقر</h3>
+                    <p id="grandTotalQty" style="color: var(--asfour-yellow);">0 طقم</p>
+                </div>
+                <div class="stat-card res">
+                    <h3>المحجوز حالياً</h3>
+                    <p id="grandTotalRes" style="color: var(--orange);">0 طقم</p>
+                </div>
+                <div class="stat-card" style="border-right-color: var(--success);">
+                    <h3>الوزن الكلي</h3>
+                    <p id="grandTotalWeight" style="color: var(--success);">0 كجم</p>
+                </div>
+            </div>
+            <input type="text" id="invSearch" placeholder="🔍 فلترة المتاح..." oninput="renderData()" style="max-width: 250px; margin-bottom: 10px;">
+            <div class="table-container">
+                <table id="invTable">
+                    <thead>
+                        <tr>
+                            <th>اسم المادة</th>
+                            <th>الرصيد الكلي</th>
+                            <th>الصافي للبيع</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="in-view" class="tab-content">
+            <h2 style="color: var(--success); margin-bottom: 10px; font-size: 16px;">📥 فاتورة داخل (توريد)</h2>
+            <div class="form-group">
+                <div>
+                    <label>التاريخ</label>
+                    <input type="date" id="inDate" onkeydown="kbNav(event, 'inName')">
+                </div>
+                <div>
+                    <label>المادة</label>
+                    <input type="text" id="inName" list="itemsList" placeholder="اختر مادة" onkeydown="kbNav(event, 'inQty')">
+                </div>
+                <div>
+                    <label>العدد (قطع)</label>
+                    <input type="number" id="inQty" placeholder="القطع" onkeydown="kbNav(event, 'inWH')">
+                </div>
+                <div>
+                    <label>المستودع</label>
+                    <select id="inWH" onkeydown="kbNav(event, 'inWeight')"></select>
+                </div>
+                <div>
+                    <label>الوزن (كجم)</label>
+                    <input type="number" step="0.01" id="inWeight" placeholder="كجم" onkeydown="kbNav(event, 'inSender')">
+                </div>
+                <div>
+                    <label>المورد</label>
+                    <input type="text" id="inSender" placeholder="الجهة" onkeydown="kbNav(event, 'inNotes')">
+                </div>
+                <div>
+                    <label>ملاحظات</label>
+                    <input type="text" id="inNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_IN')">
+                </div>
+                <button class="btn-primary" id="btn_SUBMIT_IN" onclick="addToInvoice('in')">➕ إضافة</button>
+            </div>
+            <div class="table-container">
+                <table id="inInvoiceTable">
+                    <thead>
+                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>حذف</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="btn-action" style="margin-top: 15px; background: var(--success);" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة</button>
+        </div>
+
+        <div id="out-view" class="tab-content">
+            <h2 style="color: var(--orange); margin-bottom: 10px; font-size: 16px;">📤 فاتورة خارج (بيع)</h2>
+            <div class="form-group">
+                <div>
+                    <label>التاريخ</label>
+                    <input type="date" id="outDate" onkeydown="kbNav(event, 'outName')">
+                </div>
+                <div>
+                    <label>المادة</label>
+                    <input type="text" id="outName" list="itemsList" placeholder="اختر مادة" onkeydown="kbNav(event, 'outQty')">
+                </div>
+                <div>
+                    <label>العدد (قطع)</label>
+                    <input type="number" id="outQty" placeholder="القطع" onkeydown="kbNav(event, 'outWH')">
+                </div>
+                <div>
+                    <label>المخزن</label>
+                    <select id="outWH" onkeydown="kbNav(event, 'outWeight')"></select>
+                </div>
+                <div>
+                    <label>الوزن (كجم)</label>
+                    <input type="number" step="0.01" id="outWeight" placeholder="كجم" onkeydown="kbNav(event, 'outSender')">
+                </div>
+                <div>
+                    <label>الزبون / السيارة</label>
+                    <input type="text" id="outSender" placeholder="الجهة" onkeydown="kbNav(event, 'outNotes')">
+                </div>
+                <div>
+                    <label>ملاحظات</label>
+                    <input type="text" id="outNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_OUT')">
+                </div>
+                <button class="btn-primary" id="btn_SUBMIT_OUT" onclick="addToInvoice('out')">➕ إضافة</button>
+            </div>
+            <div class="table-container">
+                <table id="outInvoiceTable">
+                    <thead>
+                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>حذف</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة</button>
+        </div>
+
+        <div id="res-view" class="tab-content">
+            <h2 style="color: var(--orange); margin-bottom: 10px; font-size: 16px;">🔒 تثبيت حجز جديد لزبون</h2>
+            <div class="form-group">
+                <div>
+                    <label>المادة</label>
+                    <input type="text" id="resName" list="itemsList" placeholder="اختر صنف" onkeydown="kbNav(event, 'resQty')">
+                </div>
+                <div>
+                    <label>العدد</label>
+                    <input type="number" id="resQty" placeholder="القطع" onkeydown="kbNav(event, 'resCustomer')">
+                </div>
+                <div>
+                    <label>اسم الزبون</label>
+                    <input type="text" id="resCustomer" placeholder="العميل" onkeydown="kbNav(event, 'resNotes')">
+                </div>
+                <div>
+                    <label>ملاحظات</label>
+                    <input type="text" id="resNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_RES')">
+                </div>
+                <button class="btn-primary" id="btn_SUBMIT_RES" onclick="addReservation()">🔒 تثبيت الحجز</button>
+            </div>
+            <div class="table-container">
+                <table id="resTable">
+                    <thead>
+                        <tr><th>المادة</th><th>الكمية</th><th>الزبون</th><th>إلغاء</th></tr>
+                    </thead>
+                    <tbody id="resBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="logs-view" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 5px;">
+                <h2 style="font-size: 16px;">📜 أرشيف الحركة الشامل</h2>
+                <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 10px; font-size: 12px;">📥 تصدير Excel</button>
+            </div>
+            <div class="table-container">
+                <table id="logsTable">
+                    <thead>
+                        <tr>
+                            <th>التاريخ</th>
+                            <th>النوع</th>
+                            <th>المادة</th>
+                            <th>القطع</th>
+                            <th>المستودع</th>
+                            <th>الوزن</th>
+                            <th>الجهة</th>
+                            <th>حذف</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="setup-view" class="tab-content">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+                <div>
+                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">🏭 إضافة مادة جديدة</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <input type="text" id="newProdItem" placeholder="مثال: حديد 12 ملم" onkeydown="if(event.key==='Enter') addNewItem()">
+                        <button class="btn-primary" onclick="addNewItem()" style="width: auto; padding: 0 15px;">حفظ</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>المواد المعرّفة</th><th>حذف</th></tr></thead>
+                            <tbody id="manageBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">📍 إضافة هناجر / مستودعات</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <input type="text" id="newWHName" placeholder="اسم الهنقر" onkeydown="if(event.key==='Enter') addNewWH()">
+                        <button class="btn-primary" onclick="addNewWH()" style="width: auto; padding: 0 15px;">حفظ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 
-<div class="container" id="main-app" style="display:none;">
-    <div class="header"><h1>ASFOUR STEEL</h1></div>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('manage-view', this)">🛠️ إدارة التعريفات</button>
-        <button class="tab-btn" id="tab-stock-btn" onclick="switchTab('stock-view', this)">📋 جرد المواد والأوزان</button>
-        <button class="tab-btn" id="tab-in-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
-        <button class="tab-btn" id="tab-out-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
-        <button class="tab-btn" onclick="switchTab('res-view', this)">🔒 الحجوزات</button>
-        <button class="tab-btn" onclick="switchTab('inventory-view', this)">📊 الرصيد المتاح للبيع</button>
-        <button class="tab-btn" onclick="switchTab('logs-view', this)">📋 السجل العام</button>
-    </div>
-
-    <div class="content">
-        <div id="manage-view" class="tab-content">
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" id="newProdItem" placeholder="إضافة مادة جديدة بالسيستم..." onkeydown="if(event.key==='Enter') addNewItem()">
-                <input type="text" id="newWHName" placeholder="إضافة مستودع جديد..." onkeydown="if(event.key==='Enter') addNewWH()">
-            </div>
-            <table>
-                <thead><tr><th>قائمة المواد المسجلة الحالية</th><th>الإجراء</th></tr></thead>
-                <tbody id="manageBody"></tbody>
-            </table>
-        </div>
-
-        <div id="stock-view" class="tab-content" style="display:none;">
-            <h3 style="margin-bottom:10px; color:var(--asfour-yellow);">📋 تقرير جرد كميات وأوزان المستودعات الحالية</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <input type="text" id="stockSearch" onkeyup="renderData()" placeholder="ابحث هنا عن صنف معين (اضغط على اسم المادة لاختيارها والفوترة)..." style="flex: 1;">
-                <button class="btn" style="background:#1d6f42; color:white; padding: 0 20px;" onclick="exportInventoryToExcel()">📊 تصدير الجرد الحالي إكسيل</button>
-            </div>
-            <table>
-                <thead><tr><th>اسم المادة (اضغط للفوترة)</th><th>تفصيل الرصيد بالقطع</th><th>تفصيل الأوزان الحالية (كجم)</th><th>إجمالي القطع</th></tr></thead>
-                <tbody id="stockBody"></tbody>
-            </table>
-        </div>
-
-        <div id="in-view" class="tab-content" style="display:none;">
-            <div class="form-row wh-row">
-                <div><label>المادة:</label><input type="text" id="inName" list="itemsList" onkeydown="kbNav(event, 'inQty')"></div>
-                <div><label>العدد (القطع):</label><input type="number" id="inQty" onkeydown="kbNav(event, 'inWH')"></div>
-                <div><label>المستودع:</label><select id="inWH" onkeydown="kbNav(event, 'inWeight')"></select></div>
-                <div><label>الوزن الكلي (كجم):</label><input type="number" step="0.01" id="inWeight" onkeydown="kbNav(event, 'inSender')"></div>
-                <div><label>المورد / الجهة:</label><input type="text" id="inSender" onkeydown="kbNav(event, 'inNotes')"></div>
-            </div>
-            <div><label>ملاحظات الفاتورة:</label><input type="text" id="inNotes" onkeydown="if(event.key==='Enter') addToInvoice('in')"></div>
-            <button class="btn" style="background:var(--blue); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('in')">➕ إضافة للمسودة (Enter)</button>
-            <div class="invoice-area">
-                <table id="inInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن المشحون</th><th>تعديل/حذف</th></tr></thead><tbody></tbody></table>
-                <button class="btn" style="background:var(--success); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('in')">✅ حفظ وترحيل الفاتورة السحابية</button>
-            </div>
-        </div>
-
-        <div id="out-view" class="tab-content" style="display:none;">
-            <div class="form-row wh-row">
-                <div><label>المادة:</label><input type="text" id="outName" list="itemsList" onkeydown="kbNav(event, 'outQty')"></div>
-                <div><label>العدد (القطع):</label><input type="number" id="outQty" onkeydown="kbNav(event, 'outWH')"></div>
-                <div><label>المستودع:</label><select id="outWH" onkeydown="kbNav(event, 'outWeight')"></select></div>
-                <div><label>الوزن الكلي (كجم):</label><input type="number" step="0.01" id="outWeight" onkeydown="kbNav(event, 'outSender')"></div>
-                <div><label>المستلم / الزبون:</label><input type="text" id="outSender" onkeydown="kbNav(event, 'outNotes')"></div>
-            </div>
-            <div><label>ملاحظات الفاتورة:</label><input type="text" id="outNotes" onkeydown="if(event.key==='Enter') addToInvoice('out')"></div>
-            <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:10px;" onclick="addToInvoice('out')">📤 إضافة للمسودة (Enter)</button>
-            <div class="invoice-area">
-                <table id="outInvoiceTable"><thead><tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن الصادر</th><th>تعديل/حذف</th></tr></thead><tbody></tbody></table>
-                <button class="btn" style="background:var(--danger); color:white; width:100%; margin-top:20px;" onclick="saveFinalInvoice('out')">✅ خصم الكميات وترحيل الفاتورة</button>
-            </div>
-        </div>
-
-        <div id="res-view" class="tab-content" style="display:none;">
-            <div class="form-row">
-                <div><label>المادة:</label><input type="text" id="resName" list="itemsList" onkeydown="kbNav(event, 'resQty')"></div>
-                <div><label>العدد الكلي للقطع:</label><input type="number" id="resQty" onkeydown="kbNav(event, 'resCustomer')"></div>
-                <div><label>اسم الزبون المعني:</label><input type="text" id="resCustomer" onkeydown="kbNav(event, 'resNotes')"></div>
-                <div><label>ملاحظات إضافية:</label><input type="text" id="resNotes" onkeydown="if(event.key==='Enter') addReservation()"></div>
-            </div>
-            <button class="btn" style="background:var(--orange); color:white; width:100%; margin-top:10px;" onclick="addReservation()">🔒 تثبيت الحجز في السحابة (Enter)</button>
-            <table style="margin-top:20px;">
-                <thead><tr><th>المادة</th><th>العدد المحجوز</th><th>اسم الزبون</th><th>إلغاء الحجز</th></tr></thead>
-                <tbody id="resBody"></tbody>
-            </table>
-        </div>
-
-        <div id="inventory-view" class="tab-content" style="display:none;">
-            <div class="summary-dashboard">
-                <div class="dash-card"><h3>إجمالي رصيد القطع</h3><div id="grandTotalQty" class="value">0</div></div>
-                <div class="dash-card"><h3>إجمالي القطع المحجوزة 🔒</h3><div id="grandTotalRes" class="value" style="color:var(--orange)">0</div></div>
-            </div>
-            <input type="text" id="invSearch" onkeyup="renderInventory()" placeholder="ابحث هنا عن صنف لمعرفة المتاح الفعلي للبيع الحالي...">
-            <table>
-                <thead><tr><th>اسم المادة</th><th>إجمالي المتوفر بالهناقر</th><th>الصافي المتاح للبيع (بعد خصم الحجوزات)</th></tr></thead>
-                <tbody id="invBody"></tbody>
-            </table>
-        </div>
-
-        <div id="logs-view" class="tab-content" style="display:none;">
-            <button class="btn" style="background:#1d6f42; color:white; margin-bottom:15px;" onclick="exportToExcel()">📊 تصدير السجل العام إكسيل (Excel)</button>
-            <table>
-                <thead><tr><th>التاريخ والوقت</th><th>حركة الحركة</th><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن (كجم)</th><th>الجهة/المستلم</th></tr></thead>
-                <tbody id="logsBody"></tbody>
-            </table>
-        </div>
-    </div>
-</div>
 <datalist id="itemsList"></datalist>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="script.js"></script>
 
 </body>
