@@ -299,6 +299,6 @@ function renderInventory() {
             </tr>`;
     }).join('');
     
-    document.getElementById('grandTotalQty').innerText = gQty + " قطعة بالهناقر";
+    document.getElementById('grandTotalQty').innerText = gQty + " قطعة  ";
     document.getElementById('grandTotalRes').innerText = gRes + " قطعة محجوزة";
 }
