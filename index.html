@@ -317,7 +317,7 @@
                 </div>
                 <div>
                     <label>المادة</label>
-                    <input type="text" id="inName" list="itemsList" placeholder="اختر مادة" onkeydown="kbNav(event, 'inQty')">
+                    <select id="inName" onkeydown="kbNav(event, 'inQty')"></select>
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
@@ -361,7 +361,7 @@
                 </div>
                 <div>
                     <label>المادة</label>
-                    <input type="text" id="outName" list="itemsList" placeholder="اختر مادة" onkeydown="kbNav(event, 'outQty')">
+                    <select id="outName" onkeydown="kbNav(event, 'outQty')"></select>
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
@@ -404,7 +404,7 @@
             <div class="form-group">
                 <div>
                     <label>المادة</label>
-                    <input type="text" id="resName" list="itemsList" placeholder="اختر صنف" onkeydown="kbNav(event, 'resQty')">
+                    <select id="resName" onkeydown="kbNav(event, 'resQty')"></select>
                 </div>
                 <div>
                     <label>العدد</label>
@@ -489,8 +489,6 @@
 
     </div>
 </div>
-
-<datalist id="itemsList"></datalist>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>

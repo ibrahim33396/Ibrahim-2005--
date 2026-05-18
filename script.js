@@ -70,13 +70,10 @@ function kbNav(e, nextId) {
         e.preventDefault(); 
         if (nextId === 'SUBMIT_IN') {
             addToInvoice('in');
-            document.getElementById('inName').focus();
         } else if (nextId === 'SUBMIT_OUT') {
             addToInvoice('out');
-            document.getElementById('outName').focus();
         } else if (nextId === 'SUBMIT_RES') {
             addReservation();
-            document.getElementById('resName').focus();
         } else {
             document.getElementById(nextId).focus(); 
         }
@@ -108,7 +105,7 @@ function addNewWH() {
 }
 
 function addToInvoice(type) {
-    const name = document.getElementById(type+'Name').value.trim();
+    const name = document.getElementById(type+'Name').value;
     const qty = parseInt(document.getElementById(type+'Qty').value) || 0;
     const wh = document.getElementById(type+'WH').value;
     const weight = parseFloat(document.getElementById(type+'Weight').value) || 0;
@@ -119,10 +116,10 @@ function addToInvoice(type) {
     if(!rawDate) rawDate = new Date().toISOString().split('T')[0];
     const formattedDate = rawDate.split('-').reverse().join('/');
 
-    if(!db.find(i => i.name === name) || qty <= 0) return alert("اختر مادة وكمية صحيحة");
+    if(!name || qty <= 0) return alert("اختر مادة وكمية صحيحة");
     
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
-    ['Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
+    ['Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
     renderInvoice(type);
 }
 
@@ -209,7 +206,7 @@ function saveFinalInvoice(type) {
 }
 
 function addReservation() {
-    const name = document.getElementById('resName').value.trim();
+    const name = document.getElementById('resName').value;
     const qty = parseInt(document.getElementById('resQty').value) || 0;
     const customer = document.getElementById('resCustomer').value.trim();
     const notes = document.getElementById('resNotes').value.trim();
@@ -231,13 +228,12 @@ function addReservation() {
     
     const todayDate = new Date().toLocaleDateString('ar-EG');
     reservations.push({ name, qty, customer, notes, wh: targetWH, date: todayDate });
-    ['resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
+    ['resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
 }
 
 function removeReservation(idx) {
     if(confirm('هل تريد إلغاء الحجز وإعادة المواد للمستودع؟')) {
-        // العثور على البند الصحيح بناءً على مصفوفة البحث الحالية
         const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
         let filteredRes = reservations;
         if(resQuery) {
@@ -330,7 +326,12 @@ function renderData() {
         setDefaultDates();
     }
 
-    document.getElementById('itemsList').innerHTML = db.map(i => `<option value="${i.name}">`).join('');
+    // هنا السر: تحويل الخانات إلى قوائم خيارات حقيقية سهلة اللمس من الجوال
+    const productOptions = `<option value="">-- اختر المادة --</option>` + db.map(i => `<option value="${i.name}">${i.name}</option>`).join('');
+    if(document.getElementById('inName')) document.getElementById('inName').innerHTML = productOptions;
+    if(document.getElementById('outName')) document.getElementById('outName').innerHTML = productOptions;
+    if(document.getElementById('resName')) document.getElementById('resName').innerHTML = productOptions;
+
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
     if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
@@ -368,7 +369,6 @@ function renderData() {
             </tr>`;
     }).join('');
 
-    // تفعيل الفلترة والبحث المزدوج (زبون + مادة) في شاشة الحجوزات مع تجميع البيانات الأساسية
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
     let filteredRes = reservations;
     if(resQuery) {
