@@ -59,7 +59,6 @@
             text-align: center;
         }
 
-        /* شريط التبويبات المنسق للجوال والكمبيوتر */
         .tabs {
             display: flex;
             gap: 8px;
@@ -105,7 +104,6 @@
             display: none;
         }
 
-        /* شبكة الحقول المرنة */
         .form-group {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -219,14 +217,13 @@
             font-weight: bold;
         }
 
-        /* تحسينات خاصة لملائمة شاشات الموبايل الصغيرة جداً */
         @media (max-width: 600px) {
             body { padding: 5px; }
             h1 { font-size: 18px; }
             .tab-content { padding: 10px; }
             th, td { padding: 8px 5px; font-size: 12px; }
-            .form-group { grid-template-columns: 1fr 1fr; } /* حقلين في كل سطر بالجوال */
-            .form-group button { grid-column: span 2; } /* زر الإضافة يأخذ السطر كاملاً */
+            .form-group { grid-template-columns: 1fr 1fr; }
+            .form-group button { grid-column: span 2; }
         }
     </style>
 </head>
@@ -284,15 +281,15 @@
         <div id="inv-view" class="tab-content">
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3>رصيد الهناقر</h3>
-                    <p id="grandTotalQty" style="color: var(--asfour-yellow);">0 طقم</p>
+                    <h3>رصيد الصنف الحالي</h3>
+                    <p id="grandTotalQty" style="color: var(--asfour-yellow);">0 قطعة</p>
                 </div>
                 <div class="stat-card res">
-                    <h3>المحجوز حالياً</h3>
-                    <p id="grandTotalRes" style="color: var(--orange);">0 طقم</p>
+                    <h3>المحجوز من الصنف</h3>
+                    <p id="grandTotalRes" style="color: var(--orange);">0 قطعة</p>
                 </div>
                 <div class="stat-card" style="border-right-color: var(--success);">
-                    <h3>الوزن الكلي</h3>
+                    <h3>الوزن الحالي للصنف</h3>
                     <p id="grandTotalWeight" style="color: var(--success);">0 كجم</p>
                 </div>
             </div>
@@ -400,7 +397,10 @@
         </div>
 
         <div id="res-view" class="tab-content">
-            <h2 style="color: var(--orange); margin-bottom: 10px; font-size: 16px;">🔒 تثبيت حجز جديد لزبون</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <h2 style="color: var(--orange); font-size: 16px;">🔒 إدارة المحجوزات</h2>
+                <input type="text" id="resSearchQuery" placeholder="🔍 بحث باسم الزبون أو المادة المحجوزة..." oninput="renderData()" style="max-width: 260px; padding: 6px 10px; font-size: 13px;">
+            </div>
             <div class="form-group">
                 <div>
                     <label>المادة</label>
@@ -423,7 +423,12 @@
             <div class="table-container">
                 <table id="resTable">
                     <thead>
-                        <tr><th>المادة</th><th>الكمية</th><th>الزبون</th><th>إلغاء</th></tr>
+                        <tr>
+                            <th>الزبون / التاريخ</th>
+                            <th>المادة المحجوزة</th>
+                            <th>العدد الأساسي</th>
+                            <th>إلغاء</th>
+                        </tr>
                     </thead>
                     <tbody id="resBody"></tbody>
                 </table>
@@ -431,9 +436,12 @@
         </div>
 
         <div id="logs-view" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 5px;">
-                <h2 style="font-size: 16px;">📜 أرشيف الحركة الشامل</h2>
-                <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 10px; font-size: 12px;">📥 تصدير Excel</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                    <h2 style="font-size: 16px;">📜 الأرشيف</h2>
+                    <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمعرفة ما أخذه..." oninput="renderData()" style="max-width: 230px; padding: 6px 10px; font-size: 13px;">
+                </div>
+                <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 10px; font-size: 12px;">📥 تصدير كشف Excel</button>
             </div>
             <div class="table-container">
                 <table id="logsTable">
@@ -445,7 +453,7 @@
                             <th>القطع</th>
                             <th>المستودع</th>
                             <th>الوزن</th>
-                            <th>الجهة</th>
+                            <th>الجهة/الزبون</th>
                             <th>حذف</th>
                         </tr>
                     </thead>

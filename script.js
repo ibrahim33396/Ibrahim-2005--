@@ -25,7 +25,7 @@ let selectedInventoryItem = null;
 function login() {
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
-    if (passInput === "000") { 
+    if (passInput === "123") { 
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         errorMsg.style.display = 'none';
@@ -237,24 +237,47 @@ function addReservation() {
 
 function removeReservation(idx) {
     if(confirm('هل تريد إلغاء الحجز وإعادة المواد للمستودع؟')) {
-        const res = reservations[idx];
-        const item = db.find(i => i.name === res.name);
-        if(item && item.stocks) {
-            let targetWH = res.wh || whs[0] || "المخزن الرئيسي";
-            if(!item.stocks[targetWH]) item.stocks[targetWH] = 0;
-            item.stocks[targetWH] += res.qty; 
+        // العثور على البند الصحيح بناءً على مصفوفة البحث الحالية
+        const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
+        let filteredRes = reservations;
+        if(resQuery) {
+            filteredRes = reservations.filter(r => 
+                (r.customer && r.customer.toLowerCase().includes(resQuery)) || 
+                (r.name && r.name.toLowerCase().includes(resQuery))
+            );
         }
-        reservations.splice(idx, 1);
-        save();
+        const actualResItem = filteredRes[idx];
+        const actualIndexInMain = reservations.indexOf(actualResItem);
+
+        if(actualIndexInMain !== -1) {
+            const res = reservations[actualIndexInMain];
+            const item = db.find(i => i.name === res.name);
+            if(item && item.stocks) {
+                let targetWH = res.wh || whs[0] || "المخزن الرئيسي";
+                if(!item.stocks[targetWH]) item.stocks[targetWH] = 0;
+                item.stocks[targetWH] += res.qty; 
+            }
+            reservations.splice(actualIndexInMain, 1);
+            save();
+        }
     }
 }
 
-// تعديل: الحذف هنا يمسح الحركة من جدول الأرشيف العام فقط ولا يؤثر على المخازن نهائياً
 function deleteLogItem(idx) {
     if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟ (لن يؤثر على رصيد المخزن الحالي)")) {
-        logs.splice(idx, 1); 
-        save();
-        alert("تم مسح بند الحركة من الأرشيف بنجاح!");
+        const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
+        let filteredLogs = logs;
+        if(customerQuery) {
+            filteredLogs = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
+        }
+        const actualItem = filteredLogs[idx];
+        const actualIndexInMainLogs = logs.indexOf(actualItem);
+        
+        if(actualIndexInMainLogs !== -1) {
+            logs.splice(actualIndexInMainLogs, 1); 
+            save();
+            alert("تم مسح بند الحركة من الأرشيف بنجاح!");
+        }
     }
 }
 
@@ -282,14 +305,23 @@ function exportInventoryToExcel() {
 }
 
 function exportToExcel() {
-    let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة;ملاحظات\n";
-    logs.forEach(l => {
+    const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
+    let logsToExport = logs;
+    let fileName = "أرشيف_الحركات";
+
+    if(customerQuery) {
+        logsToExport = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
+        fileName = `كشف_حساب_الزبون_${customerQuery.replace(/ /g, '_')}`;
+    }
+
+    let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة/الزبون;ملاحظات\n";
+    logsToExport.forEach(l => {
         csv += `${l.date};${l.type};${l.name};${l.qty};${l.wh};${l.weight};${l.sender};${(l.notes||"")}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `أرشيف_الحركات.csv`;
+    link.download = `${fileName}.csv`;
     link.click();
 }
 
@@ -316,12 +348,9 @@ function renderData() {
         filteredStockDb = filteredStockDb.filter(i => i.name === selectedStockItem);
     }
 
-    let globalTotalWeight = 0; 
-
     document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
         let totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
         let itemTotalWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
-        globalTotalWeight += itemTotalWeight; 
         
         let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div style="margin-bottom:2px;">📍 ${n}: <b>${v} ق</b></div>` : '').join('');
         let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="margin-bottom:2px; color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
@@ -339,13 +368,38 @@ function renderData() {
             </tr>`;
     }).join('');
 
-    if(document.getElementById('grandTotalWeight')) {
-        document.getElementById('grandTotalWeight').innerText = globalTotalWeight.toFixed(1) + " كجم";
+    // تفعيل الفلترة والبحث المزدوج (زبون + مادة) في شاشة الحجوزات مع تجميع البيانات الأساسية
+    const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
+    let filteredRes = reservations;
+    if(resQuery) {
+        filteredRes = reservations.filter(r => 
+            (r.customer && r.customer.toLowerCase().includes(resQuery)) || 
+            (r.name && r.name.toLowerCase().includes(resQuery))
+        );
     }
 
-    document.getElementById('resBody').innerHTML = reservations.map((r, idx) => `<tr><td>${r.name}</td><td>${r.qty} ق</td><td>${r.customer}</td><td onclick="removeReservation(${idx})" style="cursor:pointer; color:red;">🗑️ إلغاء</td></tr>`).join('');
+    document.getElementById('resBody').innerHTML = filteredRes.map((r, idx) => `
+        <tr>
+            <td>
+                <span style="font-weight:bold; color:var(--asfour-yellow);">${r.customer || 'بدون اسم'}</span>
+                <br><small style="color:var(--text-muted); font-size:10px;">📅 ${r.date || ''}</small>
+            </td>
+            <td>
+                <span style="font-weight:600;">${r.name}</span>
+                ${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}
+            </td>
+            <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
+            <td><span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold; font-size:14px;">🗑️</span></td>
+        </tr>
+    `).join('');
     
-    document.getElementById('logsBody').innerHTML = logs.map((l, idx) => `
+    const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
+    let filteredLogs = logs;
+    if(customerQuery) {
+        filteredLogs = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
+    }
+
+    document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
         <tr>
             <td>${l.date}</td>
             <td style="color:${l.type==='داخل'?'lightgreen':'coral'}">${l.type}</td>
@@ -353,7 +407,7 @@ function renderData() {
             <td>${l.qty}</td>
             <td>${l.wh}</td>
             <td>${l.weight.toFixed(1)}</td>
-            <td>${l.sender}</td>
+            <td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td>
             <td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td>
         </tr>`).join('');
         
@@ -362,19 +416,25 @@ function renderData() {
 
 function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
-    let gQty = 0, gRes = 0;
     
     let filteredInvDb = db.filter(i => i.name.toLowerCase().includes(q));
     if (selectedInventoryItem) {
         filteredInvDb = filteredInvDb.filter(i => i.name === selectedInventoryItem);
     }
 
+    let currentFilteredQty = 0;
+    let currentFilteredRes = 0;
+    let currentFilteredWeight = 0;
+
     document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
         let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+        let itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
         let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
         
-        gQty += (totalQty + itemRes); 
-        gRes += itemRes;
+        currentFilteredQty += (totalQty + itemRes); 
+        currentFilteredRes += itemRes;
+        currentFilteredWeight += itemWeight;
+
         let netAvailable = totalQty; 
         
         let nameDisplay = selectedInventoryItem 
@@ -389,6 +449,7 @@ function renderInventory() {
             </tr>`;
     }).join('');
     
-    document.getElementById('grandTotalQty').innerText = gQty + " قطعة";
-    document.getElementById('grandTotalRes').innerText = gRes + " قطعة";
+    document.getElementById('grandTotalQty').innerText = currentFilteredQty + " قطعة";
+    document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
+    document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
 }
