@@ -138,6 +138,45 @@
             color-scheme: dark;
         }
 
+        /* حاوية البحث الذكي عن المواد للموبايل */
+        .searchable-select-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #252525;
+            border: 1px solid var(--asfour-yellow);
+            border-radius: 5px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .custom-dropdown-item {
+            padding: 12px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .custom-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .custom-dropdown-item:hover, .custom-dropdown-item.selected-item {
+            background: var(--asfour-yellow);
+            color: var(--asfour-dark);
+            font-weight: bold;
+        }
+
         button.btn-primary {
             background: var(--asfour-yellow);
             color: var(--asfour-dark);
@@ -224,6 +263,7 @@
             th, td { padding: 8px 5px; font-size: 12px; }
             .form-group { grid-template-columns: 1fr 1fr; }
             .form-group button { grid-column: span 2; }
+            .searchable-select-container { grid-column: span 2; }
         }
     </style>
 </head>
@@ -244,7 +284,7 @@
                 <h1>ASFOUR STEEL</h1>
             </div>
             <div>
-                <span id="connection-status" style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
+                <span style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
             </div>
         </header>
 
@@ -313,11 +353,13 @@
             <div class="form-group">
                 <div>
                     <label>التاريخ</label>
-                    <input type="date" id="inDate" onkeydown="kbNav(event, 'inName')">
+                    <input type="date" id="inDate" onkeydown="kbNav(event, 'inNameSearch')">
                 </div>
-                <div>
-                    <label>المادة</label>
-                    <select id="inName" onkeydown="kbNav(event, 'inQty')"></select>
+                <div class="searchable-select-container">
+                    <label>المادة (اكتب للبحث)</label>
+                    <input type="text" id="inNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('in')" onfocus="showDropdown('in')" autocomplete="off">
+                    <input type="hidden" id="inName">
+                    <div id="inDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
@@ -357,11 +399,13 @@
             <div class="form-group">
                 <div>
                     <label>التاريخ</label>
-                    <input type="date" id="outDate" onkeydown="kbNav(event, 'outName')">
+                    <input type="date" id="outDate" onkeydown="kbNav(event, 'outNameSearch')">
                 </div>
-                <div>
-                    <label>المادة</label>
-                    <select id="outName" onkeydown="kbNav(event, 'outQty')"></select>
+                <div class="searchable-select-container">
+                    <label>المادة (اكتب للبحث)</label>
+                    <input type="text" id="outNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('out')" onfocus="showDropdown('out')" autocomplete="off">
+                    <input type="hidden" id="outName">
+                    <div id="outDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
@@ -402,9 +446,11 @@
                 <input type="text" id="resSearchQuery" placeholder="🔍 بحث باسم الزبون أو المادة المحجوزة..." oninput="renderData()" style="max-width: 260px; padding: 6px 10px; font-size: 13px;">
             </div>
             <div class="form-group">
-                <div>
-                    <label>المادة</label>
-                    <select id="resName" onkeydown="kbNav(event, 'resQty')"></select>
+                <div class="searchable-select-container">
+                    <label>المادة (اكتب للبحث)</label>
+                    <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" autocomplete="off">
+                    <input type="hidden" id="resName">
+                    <div id="resDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
                     <label>العدد</label>
@@ -493,16 +539,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="script.js"></script>
-
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('تم تفعيل وضع العمل بدون نت بنجاح!'))
-                .catch(err => console.log('فشل تفعيل وضع بدون نت:', err));
-        });
-    }
-</script>
 
 </body>
 </html>

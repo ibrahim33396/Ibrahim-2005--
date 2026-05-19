@@ -75,7 +75,8 @@ function kbNav(e, nextId) {
         } else if (nextId === 'SUBMIT_RES') {
             addReservation();
         } else {
-            document.getElementById(nextId).focus(); 
+            const nextEl = document.getElementById(nextId);
+            if(nextEl) nextEl.focus(); 
         }
     } 
 }
@@ -85,8 +86,61 @@ function switchTab(id, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(id).style.display = 'block';
     if(btn) btn.classList.add('active');
+    closeAllDropdowns();
     renderData();
 }
+
+// دالات التحكم بالبحث الذكي للمواد داخل الجوال
+function showDropdown(type) {
+    closeAllDropdowns();
+    const dropdown = document.getElementById(type + 'Dropdown');
+    const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
+    
+    let filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
+    if(filtered.length === 0) filtered = db;
+
+    dropdown.innerHTML = filtered.map(item => `
+        <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
+    `).join('');
+    
+    dropdown.style.display = 'block';
+}
+
+function filterDropdown(type) {
+    const dropdown = document.getElementById(type + 'Dropdown');
+    const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
+    
+    const filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
+    
+    if(filtered.length > 0) {
+        dropdown.innerHTML = filtered.map(item => `
+            <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
+        `).join('');
+        dropdown.style.display = 'block';
+    } else {
+        dropdown.style.display = 'none';
+    }
+}
+
+function selectDropdownItem(type, value) {
+    document.getElementById(type + 'NameSearch').value = value;
+    document.getElementById(type + 'Name').value = value;
+    document.getElementById(type + 'Dropdown').style.display = 'none';
+    
+    // توجيه التركيز التلقائي للخانة التالية (الكمية) مباشرة بعد اختيار المادة
+    document.getElementById(type + 'Qty').focus();
+}
+
+function closeAllDropdowns() {
+    document.querySelectorAll('.custom-dropdown-list').forEach(d => d.style.display = 'none');
+}
+
+// إغلاق القوائم عند الضغط في أي مكان خارجها
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.searchable-select-container')) {
+        closeAllDropdowns();
+    }
+});
 
 function addNewItem() {
     const val = document.getElementById('newProdItem').value.trim();
@@ -119,7 +173,7 @@ function addToInvoice(type) {
     if(!name || qty <= 0) return alert("اختر مادة وكمية صحيحة");
     
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
-    ['Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
+    ['NameSearch', 'Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
     renderInvoice(type);
 }
 
@@ -148,6 +202,7 @@ function renderInvoice(type) {
 
 function editInvoiceItem(type, idx) {
     const item = tempInvoice[type][idx];
+    document.getElementById(type+'NameSearch').value = item.name;
     document.getElementById(type+'Name').value = item.name;
     document.getElementById(type+'Qty').value = item.qty;
     document.getElementById(type+'WH').value = item.wh;
@@ -228,7 +283,7 @@ function addReservation() {
     
     const todayDate = new Date().toLocaleDateString('ar-EG');
     reservations.push({ name, qty, customer, notes, wh: targetWH, date: todayDate });
-    ['resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
+    ['resNameSearch', 'resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
 }
 
@@ -325,11 +380,6 @@ function renderData() {
     if((document.getElementById('inDate') && !document.getElementById('inDate').value) || (document.getElementById('outDate') && !document.getElementById('outDate').value)) {
         setDefaultDates();
     }
-
-    const productOptions = `<option value="">-- اختر المادة --</option>` + db.map(i => `<option value="${i.name}">${i.name}</option>`).join('');
-    if(document.getElementById('inName')) document.getElementById('inName').innerHTML = productOptions;
-    if(document.getElementById('outName')) document.getElementById('outName').innerHTML = productOptions;
-    if(document.getElementById('resName')) document.getElementById('resName').innerHTML = productOptions;
 
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
