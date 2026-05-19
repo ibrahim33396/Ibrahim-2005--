@@ -138,7 +138,7 @@
             color-scheme: dark;
         }
 
-        /* حاوية البحث الذكي عن المواد للموبايل */
+        /* حاويات البحث الذكي للمواد والخيارات */
         .searchable-select-container {
             position: relative;
             width: 100%;
@@ -171,7 +171,7 @@
             border-bottom: none;
         }
 
-        .custom-dropdown-item:hover, .custom-dropdown-item.selected-item {
+        .custom-dropdown-item:hover {
             background: var(--asfour-yellow);
             color: var(--asfour-dark);
             font-weight: bold;
@@ -300,7 +300,10 @@
 
         <div id="stock-view" class="tab-content" style="display: block;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                <input type="text" id="stockSearch" placeholder="🔍 بحث عن صنف..." oninput="renderData()" style="max-width: 250px;">
+                <div class="searchable-select-container" style="max-width: 250px;">
+                    <input type="text" id="stockSearch" placeholder="🔍 اكتب اسم الصنف للبحث..." oninput="filterGlobalSearch('stock')" onfocus="showGlobalSearchDropdown('stock')" autocomplete="off">
+                    <div id="stockDropdown" class="custom-dropdown-list"></div>
+                </div>
                 <button class="btn-primary" onclick="exportInventoryToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px;">📊 تصدير Excel</button>
             </div>
             <div class="table-container">
@@ -333,7 +336,10 @@
                     <p id="grandTotalWeight" style="color: var(--success);">0 كجم</p>
                 </div>
             </div>
-            <input type="text" id="invSearch" placeholder="🔍 فلترة المتاح..." oninput="renderData()" style="max-width: 250px; margin-bottom: 10px;">
+            <div class="searchable-select-container" style="max-width: 250px; margin-bottom: 10px;">
+                <input type="text" id="invSearch" placeholder="🔍 اكتب لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
+                <div id="invDropdown" class="custom-dropdown-list"></div>
+            </div>
             <div class="table-container">
                 <table id="invTable">
                     <thead>
@@ -443,7 +449,10 @@
         <div id="res-view" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="color: var(--orange); font-size: 16px;">🔒 إدارة المحجوزات</h2>
-                <input type="text" id="resSearchQuery" placeholder="🔍 بحث باسم الزبون أو المادة المحجوزة..." oninput="renderData()" style="max-width: 260px; padding: 6px 10px; font-size: 13px;">
+                <div class="searchable-select-container" style="max-width: 260px;">
+                    <input type="text" id="resSearchQuery" placeholder="🔍 ابحث باسم الزبون أو الصنف المحجوز..." oninput="filterGlobalSearch('res')" onfocus="showGlobalSearchDropdown('res')" autocomplete="off">
+                    <div id="resSearchDropdown" class="custom-dropdown-list"></div>
+                </div>
             </div>
             <div class="form-group">
                 <div class="searchable-select-container">
@@ -483,9 +492,12 @@
 
         <div id="logs-view" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                    <h2 style="font-size: 16px;">📜 الأرشيف</h2>
-                    <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمعرفة ما أخذه..." oninput="renderData()" style="max-width: 230px; padding: 6px 10px; font-size: 13px;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; max-width: 400px;">
+                    <h2 style="font-size: 16px; white-space: nowrap;">📜 الأرشيف</h2>
+                    <div class="searchable-select-container" style="flex: 1;">
+                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمشاهدة حركاته..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" autocomplete="off">
+                        <div id="logSearchDropdown" class="custom-dropdown-list"></div>
+                    </div>
                 </div>
                 <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 10px; font-size: 12px;">📥 تصدير كشف Excel</button>
             </div>

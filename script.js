@@ -25,7 +25,7 @@ let selectedInventoryItem = null;
 function login() {
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
-    if (passInput === "123") { 
+    if (passInput === "000") { 
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         errorMsg.style.display = 'none';
@@ -90,7 +90,7 @@ function switchTab(id, btn) {
     renderData();
 }
 
-// دالات التحكم بالبحث الذكي للمواد داخل الجوال
+// ==================== نظام البحث واختيار المواد في الفواتير والحجوزات ====================
 function showDropdown(type) {
     closeAllDropdowns();
     const dropdown = document.getElementById(type + 'Dropdown');
@@ -127,20 +127,108 @@ function selectDropdownItem(type, value) {
     document.getElementById(type + 'Name').value = value;
     document.getElementById(type + 'Dropdown').style.display = 'none';
     
-    // توجيه التركيز التلقائي للخانة التالية (الكمية) مباشرة بعد اختيار المادة
-    document.getElementById(type + 'Qty').focus();
+    // تركيز تلقائي على الحقل التالي لتوفير الوقت
+    if(document.getElementById(type + 'Qty')) {
+        document.getElementById(type + 'Qty').focus();
+    }
+}
+
+// ==================== نظام فلاتر البحث في شاشات العرض والجرد (أعلى الجداول) ====================
+function showGlobalSearchDropdown(view) {
+    closeAllDropdowns();
+    let dropdownId = view + 'Dropdown';
+    let inputId = view + 'Search';
+    
+    if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
+    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    
+    const dropdown = document.getElementById(dropdownId);
+    const inputVal = document.getElementById(inputId).value.toLowerCase();
+    
+    let listItems = [];
+    if(view === 'stock' || view === 'inv') {
+        listItems = db.map(i => i.name);
+    } else if(view === 'res') {
+        // جمع أسماء الزبائن والمواد بدون تكرار
+        let uniqueCustomers = [...new Set(reservations.map(r => r.customer).filter(Boolean))];
+        let uniqueItems = [...new Set(reservations.map(r => r.name).filter(Boolean))];
+        listItems = [...uniqueCustomers, ...uniqueItems];
+    } else if(view === 'log') {
+        listItems = [...new Set(logs.map(l => l.sender).filter(Boolean))];
+    }
+
+    let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
+    if(filtered.length === 0) filtered = listItems.slice(0, 15); // إظهار أول 15 خيار كحد أقصى عند خلو النص
+
+    dropdown.innerHTML = filtered.map(name => `
+        <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
+    `).join('');
+    
+    dropdown.style.display = 'block';
+}
+
+function filterGlobalSearch(view) {
+    let dropdownId = view + 'Dropdown';
+    let inputId = view + 'Search';
+    
+    if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
+    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    
+    const dropdown = document.getElementById(dropdownId);
+    const inputVal = document.getElementById(inputId).value.toLowerCase();
+    
+    let listItems = [];
+    if(view === 'stock' || view === 'inv') {
+        listItems = db.map(i => i.name);
+    } else if(view === 'res') {
+        let uniqueCustomers = [...new Set(reservations.map(r => r.customer).filter(Boolean))];
+        let uniqueItems = [...new Set(reservations.map(r => r.name).filter(Boolean))];
+        listItems = [...uniqueCustomers, ...uniqueItems];
+    } else if(view === 'log') {
+        listItems = [...new Set(logs.map(l => l.sender).filter(Boolean))];
+    }
+
+    let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
+    
+    if(filtered.length > 0) {
+        dropdown.innerHTML = filtered.map(name => `
+            <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
+        `).join('');
+        dropdown.style.display = 'block';
+    } else {
+        dropdown.style.display = 'none';
+    }
+    renderData(); // تحديث الجدول مباشرة أثناء الكتابة
+}
+
+function selectGlobalSearchItem(view, value) {
+    let dropdownId = view + 'Dropdown';
+    let inputId = view + 'Search';
+    
+    if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
+    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    
+    document.getElementById(inputId).value = value;
+    document.getElementById(dropdownId).style.display = 'none';
+    
+    if(view === 'stock') selectedStockItem = value;
+    if(view === 'inv') selectedInventoryItem = value;
+    
+    renderData();
 }
 
 function closeAllDropdowns() {
     document.querySelectorAll('.custom-dropdown-list').forEach(d => d.style.display = 'none');
 }
 
-// إغلاق القوائم عند الضغط في أي مكان خارجها
+// إغلاق كل القوائم إذا نقر المستخدم في مساحة فارغة بالخارج
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.searchable-select-container')) {
         closeAllDropdowns();
     }
 });
+
+// ==================== باقي وظائف النظام الأساسية ====================
 
 function addNewItem() {
     const val = document.getElementById('newProdItem').value.trim();
@@ -289,7 +377,7 @@ function addReservation() {
 
 function removeReservation(idx) {
     if(confirm('هل تريد إلغاء الحجز وإعادة المواد للمستودع؟')) {
-        const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
+        const resQuery = document.getElementById('resSearchQuery').value.toLowerCase();
         let filteredRes = reservations;
         if(resQuery) {
             filteredRes = reservations.filter(r => 
@@ -316,7 +404,7 @@ function removeReservation(idx) {
 
 function deleteLogItem(idx) {
     if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟ (لن يؤثر على رصيد المخزن الحالي)")) {
-        const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
+        const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
         let filteredLogs = logs;
         if(customerQuery) {
             filteredLogs = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
@@ -356,7 +444,7 @@ function exportInventoryToExcel() {
 }
 
 function exportToExcel() {
-    const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
+    const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
     let logsToExport = logs;
     let fileName = "أرشيف_الحركات";
 
@@ -392,11 +480,9 @@ function renderData() {
         </tr>
     `).join('');
 
+    // تصفية جدول الجرد الكلي
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
     let filteredStockDb = db.filter(i => i.name.toLowerCase().includes(stockSearchQuery));
-    if (selectedStockItem) {
-        filteredStockDb = filteredStockDb.filter(i => i.name === selectedStockItem);
-    }
 
     document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
         let totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
@@ -405,19 +491,16 @@ function renderData() {
         let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div style="margin-bottom:2px;">📍 ${n}: <b>${v} ق</b></div>` : '').join('');
         let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="margin-bottom:2px; color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
         
-        let nameDisplay = selectedStockItem 
-            ? `${i.name} <span onclick="selectedStockItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:11px; cursor:pointer;">[إلغاء]</span>`
-            : `<span style="cursor:pointer; color:#3498db;">${i.name}</span>`;
-
         return `
-            <tr onclick="if(!selectedStockItem){ selectedStockItem='${i.name}'; renderData(); }">
-                <td style="font-weight:bold;">${nameDisplay}</td>
+            <tr>
+                <td style="font-weight:bold; color:#3498db;">${i.name}</td>
                 <td>${piecesDetail || '-'}</td>
                 <td>${weightsDetail || '-'}</td>
                 <td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td>
             </tr>`;
     }).join('');
 
+    // تصفية جدول المحجوزات
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
     let filteredRes = reservations;
     if(resQuery) {
@@ -442,10 +525,14 @@ function renderData() {
         </tr>
     `).join('');
     
+    // تصفية جدول الأرشيف
     const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
     let filteredLogs = logs;
     if(customerQuery) {
-        filteredLogs = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
+        filteredLogs = logs.filter(l => 
+            (l.sender && l.sender.toLowerCase().includes(customerQuery)) || 
+            (l.name && l.name.toLowerCase().includes(customerQuery))
+        );
     }
 
     document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
@@ -467,9 +554,6 @@ function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     
     let filteredInvDb = db.filter(i => i.name.toLowerCase().includes(q));
-    if (selectedInventoryItem) {
-        filteredInvDb = filteredInvDb.filter(i => i.name === selectedInventoryItem);
-    }
 
     let currentFilteredQty = 0;
     let currentFilteredRes = 0;
@@ -485,14 +569,10 @@ function renderInventory() {
         currentFilteredWeight += itemWeight;
 
         let netAvailable = totalQty; 
-        
-        let nameDisplay = selectedInventoryItem 
-            ? `${i.name} <span onclick="selectedInventoryItem=null; renderData(); event.stopPropagation();" style="color:var(--orange); font-size:11px; cursor:pointer;">[إلغاء]</span>`
-            : `<span style="cursor:pointer; color:#3498db;">${i.name}</span>`;
 
         return `
-            <tr onclick="if(!selectedInventoryItem){ selectedInventoryItem='${i.name}'; renderData(); }">
-                <td style="font-weight:bold;">${nameDisplay}</td>
+            <tr>
+                <td style="font-weight:bold; color:#3498db;">${i.name}</td>
                 <td>${totalQty + itemRes} ق</td>
                 <td style="font-weight:bold; color:${netAvailable < 0 ? 'var(--danger)' : 'lightgreen'}">${netAvailable} ق</td>
             </tr>`;
