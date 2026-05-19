@@ -244,7 +244,7 @@
                 <h1>ASFOUR STEEL</h1>
             </div>
             <div>
-                <span style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
+                <span id="connection-status" style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
             </div>
         </header>
 
@@ -493,6 +493,16 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="script.js"></script>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('تم تفعيل وضع العمل بدون نت بنجاح!'))
+                .catch(err => console.log('فشل تفعيل وضع بدون نت:', err));
+        });
+    }
+</script>
 
 </body>
 </html>

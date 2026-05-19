@@ -326,7 +326,6 @@ function renderData() {
         setDefaultDates();
     }
 
-    // هنا السر: تحويل الخانات إلى قوائم خيارات حقيقية سهلة اللمس من الجوال
     const productOptions = `<option value="">-- اختر المادة --</option>` + db.map(i => `<option value="${i.name}">${i.name}</option>`).join('');
     if(document.getElementById('inName')) document.getElementById('inName').innerHTML = productOptions;
     if(document.getElementById('outName')) document.getElementById('outName').innerHTML = productOptions;
