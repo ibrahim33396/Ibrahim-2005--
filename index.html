@@ -138,7 +138,6 @@
             color-scheme: dark;
         }
 
-        /* حاويات البحث الذكي للمواد والخيارات */
         .searchable-select-container {
             position: relative;
             width: 100%;
@@ -165,10 +164,6 @@
             border-bottom: 1px solid #333;
             font-size: 14px;
             color: #fff;
-        }
-
-        .custom-dropdown-item:last-child {
-            border-bottom: none;
         }
 
         .custom-dropdown-item:hover {
@@ -247,6 +242,28 @@
         .stat-card p {
             font-size: 18px;
             font-weight: bold;
+        }
+
+        /* نافذة التعديل السريع (Modal) */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .modal-content {
+            background: var(--asfour-panel);
+            border: 2px solid var(--asfour-yellow);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 450px;
+            padding: 20px;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .error-msg {
@@ -336,9 +353,12 @@
                     <p id="grandTotalWeight" style="color: var(--success);">0 كجم</p>
                 </div>
             </div>
-            <div class="searchable-select-container" style="max-width: 250px; margin-bottom: 10px;">
-                <input type="text" id="invSearch" placeholder="🔍 اكتب لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
-                <div id="invDropdown" class="custom-dropdown-list"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                <div class="searchable-select-container" style="max-width: 250px;">
+                    <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
+                    <div id="invDropdown" class="custom-dropdown-list"></div>
+                </div>
+                <button class="btn-action" id="clearInvFilterBtn" style="display:none; width:auto; padding:8px 12px; font-size:12px;" onclick="clearInventoryFilter()">❌ إلغاء الفلتر</button>
             </div>
             <div class="table-container">
                 <table id="invTable">
@@ -347,10 +367,31 @@
                             <th>اسم المادة</th>
                             <th>الرصيد الكلي</th>
                             <th>الصافي للبيع</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="invBody"></tbody>
                 </table>
+            </div>
+        </div>
+
+        <div id="editMaterialModal" class="modal">
+            <div class="modal-content">
+                <h3 style="color: var(--asfour-yellow); margin-bottom: 15px; font-size: 16px; display: flex; justify-content: space-between;">
+                    <span>📝 تعديل بيانات المادة</span>
+                    <span onclick="closeEditModal()" style="cursor: pointer; color: var(--danger);">✕</span>
+                </h3>
+                <input type="hidden" id="editItemIdx">
+                <div style="margin-bottom: 12px;">
+                    <label>اسم المادة الحالي</label>
+                    <input type="text" id="editItemName" placeholder="اسم الصنف">
+                </div>
+                <div id="editItemWarehousesContainer" style="margin-bottom: 15px;">
+                    </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" onclick="saveQuickEdit()">💾 حفظ التعديلات</button>
+                    <button class="btn-action" style="background:#444;" onclick="closeEditModal()">إلغاء</button>
+                </div>
             </div>
         </div>
 

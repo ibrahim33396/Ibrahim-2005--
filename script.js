@@ -1,4 +1,4 @@
-// إعدادات Firebase الخاصة بمشروعك (إبراهيم) - ثابته ومحمية
+// إعدادات Firebase الخاصة بمشروعك (إبراهيم) - ثابتة ومحمية
 const firebaseConfig = {
   apiKey: "AIzaSyDlv0ygMBeIVLQo2AzDIrHzGb_AeDDh-q0",
   authDomain: "ibrahim-f988d.firebaseapp.com",
@@ -10,9 +10,11 @@ const firebaseConfig = {
   measurementId: "G-XMWFJ3HGNP"
 };
 
+// تهيئة Firebase
 firebase.initializeApp(firebaseConfig);
 const dbRef = firebase.database().ref('asfour_data');
 
+// المتغيرات العامة للنظام
 let db = [];
 let whs = ["المخزن الرئيسي"];
 let logs = [];
@@ -22,10 +24,11 @@ let tempInvoice = { in: [], out: [] };
 let selectedStockItem = null;
 let selectedInventoryItem = null;
 
+// دالة تسجيل الدخول
 function login() {
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
-    if (passInput === "000") { 
+    if (passInput === "123") { 
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('main-app').style.display = 'block';
         errorMsg.style.display = 'none';
@@ -37,6 +40,7 @@ function login() {
     }
 }
 
+// الاستماع للتغييرات في قاعدة البيانات جلب البيانات فورياً
 dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -50,6 +54,7 @@ dbRef.on('value', (snapshot) => {
     }
 });
 
+// دالة حفظ البيانات إلى السحابة
 function save() {
     dbRef.set({
         items: db,
@@ -59,12 +64,14 @@ function save() {
     });
 }
 
+// تعيين تاريخ اليوم كقيمة افتراضية للحقول
 function setDefaultDates() {
     const today = new Date().toISOString().split('T')[0];
     if(document.getElementById('inDate')) document.getElementById('inDate').value = today;
     if(document.getElementById('outDate')) document.getElementById('outDate').value = today;
 }
 
+// دالة التنقل السريع بلوحة المفاتيح والـ Enter
 function kbNav(e, nextId) { 
     if (e.key === 'Enter') { 
         e.preventDefault(); 
@@ -81,11 +88,19 @@ function kbNav(e, nextId) {
     } 
 }
 
+// دالة التنقل بين الشاشات (التبويبات)
 function switchTab(id, btn) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(id).style.display = 'block';
     if(btn) btn.classList.add('active');
+    
+    // إعادة تصفير فلاتر البحث المنفصلة عند التنقل لراحة المستخدم
+    selectedStockItem = null;
+    selectedInventoryItem = null;
+    if(document.getElementById('stockSearch')) document.getElementById('stockSearch').value = '';
+    if(document.getElementById('invSearch')) document.getElementById('invSearch').value = '';
+
     closeAllDropdowns();
     renderData();
 }
@@ -127,7 +142,6 @@ function selectDropdownItem(type, value) {
     document.getElementById(type + 'Name').value = value;
     document.getElementById(type + 'Dropdown').style.display = 'none';
     
-    // تركيز تلقائي على الحقل التالي لتوفير الوقت
     if(document.getElementById(type + 'Qty')) {
         document.getElementById(type + 'Qty').focus();
     }
@@ -149,7 +163,6 @@ function showGlobalSearchDropdown(view) {
     if(view === 'stock' || view === 'inv') {
         listItems = db.map(i => i.name);
     } else if(view === 'res') {
-        // جمع أسماء الزبائن والمواد بدون تكرار
         let uniqueCustomers = [...new Set(reservations.map(r => r.customer).filter(Boolean))];
         let uniqueItems = [...new Set(reservations.map(r => r.name).filter(Boolean))];
         listItems = [...uniqueCustomers, ...uniqueItems];
@@ -158,7 +171,7 @@ function showGlobalSearchDropdown(view) {
     }
 
     let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
-    if(filtered.length === 0) filtered = listItems.slice(0, 15); // إظهار أول 15 خيار كحد أقصى عند خلو النص
+    if(filtered.length === 0) filtered = listItems.slice(0, 15);
 
     dropdown.innerHTML = filtered.map(name => `
         <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
@@ -198,7 +211,13 @@ function filterGlobalSearch(view) {
     } else {
         dropdown.style.display = 'none';
     }
-    renderData(); // تحديث الجدول مباشرة أثناء الكتابة
+    
+    // مسح الفلتر الصارم إذا قام المستخدم بمسح حقل البحث بيده
+    if(!inputVal) {
+        if(view === 'stock') selectedStockItem = null;
+        if(view === 'inv') selectedInventoryItem = null;
+    }
+    renderData();
 }
 
 function selectGlobalSearchItem(view, value) {
@@ -221,15 +240,14 @@ function closeAllDropdowns() {
     document.querySelectorAll('.custom-dropdown-list').forEach(d => d.style.display = 'none');
 }
 
-// إغلاق كل القوائم إذا نقر المستخدم في مساحة فارغة بالخارج
+// إغلاق أي قائمة منسدلة منبثقة عند الضغط خارجها
 document.addEventListener('click', function(e) {
     if (!e.target.closest('.searchable-select-container')) {
         closeAllDropdowns();
     }
 });
 
-// ==================== باقي وظائف النظام الأساسية ====================
-
+// ==================== وظائف إعدادات المواد والمستودعات ====================
 function addNewItem() {
     const val = document.getElementById('newProdItem').value.trim();
     if(!val || db.find(i => i.name === val)) return;
@@ -246,6 +264,54 @@ function addNewWH() {
     save();
 }
 
+// ==================== دالة التعديل السريع المباشر للمادة من جدول المتاح للبيع ====================
+function quickEditItem(itemName) {
+    const item = db.find(i => i.name === itemName);
+    if (!item) return;
+
+    let targetWH = whs[0] || "المخزن الرئيسي";
+    if (!item.stocks) item.stocks = {};
+    if (!item.weights) item.weights = {};
+
+    let currentQty = item.stocks[targetWH] || 0;
+    let currentWeight = item.weights[targetWH] || 0;
+
+    // طلب الكمية الجديدة
+    let newQtyInput = prompt(`تعديل رصيد [ ${itemName} ] في [ ${targetWH} ]:\nالكمية الحالية هي (${currentQty} قطعة).\nأدخل الكمية الجديدة المطلوبة:`, currentQty);
+    if (newQtyInput === null) return; // إلغاء العملية
+    
+    // طلب الوزن الجديد
+    let newWeightInput = prompt(`أدخل الوزن الإجمالي الجديد بالـ (كجم) لنفس الصنف:\nالوزن الحالي هو (${currentWeight} كجم):`, currentWeight);
+    if (newWeightInput === null) return; // إلغاء العملية
+
+    let newQty = parseInt(newQtyInput);
+    let newWeight = parseFloat(newWeightInput);
+
+    if (isNaN(newQty) || isNaN(newWeight)) {
+        return alert("🚨 خطأ: يرجى إدخال أرقام صحيحة.");
+    }
+
+    // تحديث رصيد المخزن مباشرة
+    item.stocks[targetWH] = newQty;
+    item.weights[targetWH] = newWeight;
+
+    // إضافة حركة تذكيرية آلية للأرشيف
+    logs.unshift({
+        date: new Date().toLocaleDateString('ar-EG').split('-').reverse().join('/'),
+        type: "تعديل رصيد",
+        name: itemName,
+        qty: newQty,
+        wh: targetWH,
+        weight: newWeight,
+        sender: "المدير (تعديل مباشر)",
+        notes: `تم تصحيح الرصيد يدوياً من المتاح للبيع`
+    });
+
+    save();
+    alert("✅ تم التعديل والتحديث السحابي بنجاح!");
+}
+
+// ==================== نظام إدارة الفواتير والترحيل للمخازن ====================
 function addToInvoice(type) {
     const name = document.getElementById(type+'Name').value;
     const qty = parseInt(document.getElementById(type+'Qty').value) || 0;
@@ -267,7 +333,6 @@ function addToInvoice(type) {
 
 function renderInvoice(type) {
     let totalInvoiceWeight = tempInvoice[type].reduce((sum, item) => sum + item.weight, 0);
-    
     let tableBody = tempInvoice[type].map((item, idx) => `
         <tr>
             <td>${item.name}</td>
@@ -321,7 +386,6 @@ function saveFinalInvoice(type) {
             }
         });
     }
-
     if (hasError) return;
 
     tempInvoice[type].forEach(invItem => {
@@ -338,7 +402,6 @@ function saveFinalInvoice(type) {
             item.stocks[invItem.wh] -= invItem.qty;
             item.weights[invItem.wh] -= invItem.weight;
         }
-        
         logs.unshift({ ...invItem, type: type === 'in' ? 'داخل' : 'خارج' });
     });
     tempInvoice[type] = [];
@@ -348,6 +411,7 @@ function saveFinalInvoice(type) {
     alert("تم حفظ الفاتورة سحابياً!");
 }
 
+// ==================== نظام التثبيت والتحكم في المحجوزات ====================
 function addReservation() {
     const name = document.getElementById('resName').value;
     const qty = parseInt(document.getElementById('resQty').value) || 0;
@@ -360,13 +424,9 @@ function addReservation() {
     let targetWH = whs[0] || "المخزن الرئيسي";
     let currentStock = item.stocks && item.stocks[targetWH] ? item.stocks[targetWH] : 0;
 
-    if (currentStock < qty) {
-        return alert(`🚨 عذراً! الرصيد لا يكفي الحجز.`);
-    }
+    if (currentStock < qty) return alert(`🚨 عذراً! الرصيد لا يكفي الحجز.`);
 
     if (!item.stocks) item.stocks = {};
-    if (!item.stocks[targetWH]) item.stocks[targetWH] = 0;
-
     item.stocks[targetWH] -= qty;
     
     const todayDate = new Date().toLocaleDateString('ar-EG');
@@ -402,8 +462,9 @@ function removeReservation(idx) {
     }
 }
 
+// ==================== نظام مسح وتصدير تقارير الأرشيف ====================
 function deleteLogItem(idx) {
-    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟ (لن يؤثر على رصيد المخزن الحالي)")) {
+    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟")) {
         const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
         let filteredLogs = logs;
         if(customerQuery) {
@@ -415,43 +476,31 @@ function deleteLogItem(idx) {
         if(actualIndexInMainLogs !== -1) {
             logs.splice(actualIndexInMainLogs, 1); 
             save();
-            alert("تم مسح بند الحركة من الأرشيف بنجاح!");
+            alert("تم مسح بند الحركة بنجاح!");
         }
     }
 }
 
 function exportInventoryToExcel() {
     let csv = "\uFEFFالمادة;المستودع;الرصيد;الوزن\n";
-    let itemsToExport = db;
-    if (selectedStockItem) {
-        itemsToExport = db.filter(i => i.name === selectedStockItem);
-    }
-    itemsToExport.forEach(i => {
+    db.forEach(i => {
         whs.forEach(w => {
             let q = i.stocks && i.stocks[w] ? i.stocks[w] : 0;
             let wt = i.weights && i.weights[w] ? i.weights[w] : 0;
-            if (q !== 0 || wt !== 0) {
-                csv += `${i.name};${w};${q};${wt.toFixed(2)}\n`;
-            }
+            if (q !== 0 || wt !== 0) csv += `${i.name};${w};${q};${wt.toFixed(2)}\n`;
         });
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    let fileName = selectedStockItem ? `جرد_${selectedStockItem}` : "تقرير_الجرد";
-    link.download = `${fileName}_${new Date().toLocaleDateString('ar-EG')}.csv`;
+    link.download = `تقرير_الجرد_${new Date().toLocaleDateString('ar-EG')}.csv`;
     link.click();
 }
 
 function exportToExcel() {
     const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
     let logsToExport = logs;
-    let fileName = "أرشيف_الحركات";
-
-    if(customerQuery) {
-        logsToExport = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
-        fileName = `كشف_حساب_الزبون_${customerQuery.replace(/ /g, '_')}`;
-    }
+    if(customerQuery) logsToExport = logs.filter(l => l.sender && l.sender.toLowerCase().includes(customerQuery));
 
     let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة/الزبون;ملاحظات\n";
     logsToExport.forEach(l => {
@@ -460,15 +509,15 @@ function exportToExcel() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${fileName}.csv`;
+    link.download = `أرشيف_الحركات.csv`;
     link.click();
 }
 
+// ==================== عمليات بناء الجداول والعرض الفوري الفلاتر ====================
 function renderData() {
     if((document.getElementById('inDate') && !document.getElementById('inDate').value) || (document.getElementById('outDate') && !document.getElementById('outDate').value)) {
         setDefaultDates();
     }
-
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
     if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
@@ -480,72 +529,31 @@ function renderData() {
         </tr>
     `).join('');
 
-    // تصفية جدول الجرد الكلي
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
-    let filteredStockDb = db.filter(i => i.name.toLowerCase().includes(stockSearchQuery));
+    let filteredStockDb = db.filter(i => !selectedStockItem ? i.name.toLowerCase().includes(stockSearchQuery) : i.name === selectedStockItem);
 
     document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
         let totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
         let itemTotalWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+        let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div>📍 ${n}: <b>${v} ق</b></div>` : '').join('');
+        let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
         
-        let piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div style="margin-bottom:2px;">📍 ${n}: <b>${v} ق</b></div>` : '').join('');
-        let weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="margin-bottom:2px; color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
-        
-        return `
-            <tr>
-                <td style="font-weight:bold; color:#3498db;">${i.name}</td>
-                <td>${piecesDetail || '-'}</td>
-                <td>${weightsDetail || '-'}</td>
-                <td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td>
-            </tr>`;
+        return `<tr><td style="font-weight:bold; color:#3498db;">${i.name}</td><td>${piecesDetail || '-'}</td><td>${weightsDetail || '-'}</td><td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td></tr>`;
     }).join('');
 
-    // تصفية جدول المحجوزات
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
-    let filteredRes = reservations;
-    if(resQuery) {
-        filteredRes = reservations.filter(r => 
-            (r.customer && r.customer.toLowerCase().includes(resQuery)) || 
-            (r.name && r.name.toLowerCase().includes(resQuery))
-        );
-    }
+    let filteredRes = reservations.filter(r => !resQuery || (r.customer && r.customer.toLowerCase().includes(resQuery)) || (r.name && r.name.toLowerCase().includes(resQuery)));
 
     document.getElementById('resBody').innerHTML = filteredRes.map((r, idx) => `
-        <tr>
-            <td>
-                <span style="font-weight:bold; color:var(--asfour-yellow);">${r.customer || 'بدون اسم'}</span>
-                <br><small style="color:var(--text-muted); font-size:10px;">📅 ${r.date || ''}</small>
-            </td>
-            <td>
-                <span style="font-weight:600;">${r.name}</span>
-                ${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}
-            </td>
-            <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
-            <td><span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold; font-size:14px;">🗑️</span></td>
-        </tr>
+        <tr><td><span style="font-weight:bold; color:var(--asfour-yellow);">${r.customer || 'بدون اسم'}</span><br><small style="color:var(--text-muted); font-size:10px;">📅 ${r.date || ''}</small></td><td><span style="font-weight:600;">${r.name}</span>${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}</td><td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td><td><span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold; font-size:14px;">🗑️</span></td></tr>
     `).join('');
     
-    // تصفية جدول الأرشيف
     const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
-    let filteredLogs = logs;
-    if(customerQuery) {
-        filteredLogs = logs.filter(l => 
-            (l.sender && l.sender.toLowerCase().includes(customerQuery)) || 
-            (l.name && l.name.toLowerCase().includes(customerQuery))
-        );
-    }
+    let filteredLogs = logs.filter(l => !customerQuery || (l.sender && l.sender.toLowerCase().includes(customerQuery)) || (l.name && l.name.toLowerCase().includes(customerQuery)));
 
     document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
-        <tr>
-            <td>${l.date}</td>
-            <td style="color:${l.type==='داخل'?'lightgreen':'coral'}">${l.type}</td>
-            <td>${l.name}</td>
-            <td>${l.qty}</td>
-            <td>${l.wh}</td>
-            <td>${l.weight.toFixed(1)}</td>
-            <td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td>
-            <td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td>
-        </tr>`).join('');
+        <tr><td>${l.date}</td><td style="color:${l.type==='داخل'?'lightgreen':'coral'}">${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td>${l.weight.toFixed(1)}</td><td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td><td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td></tr>
+    `).join('');
         
     renderInventory();
 }
@@ -553,11 +561,10 @@ function renderData() {
 function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     
-    let filteredInvDb = db.filter(i => i.name.toLowerCase().includes(q));
+    // دعم تصفية الجدول الفورية بناءً على خيار البحث المنسدل المختار (selectedInventoryItem) أو النص المكتوب
+    let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
 
-    let currentFilteredQty = 0;
-    let currentFilteredRes = 0;
-    let currentFilteredWeight = 0;
+    let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0;
 
     document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
         let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
@@ -565,16 +572,17 @@ function renderInventory() {
         let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
         
         currentFilteredQty += (totalQty + itemRes); 
-        currentFilteredRes += itemRes;
+        currentFilteredRes += itemRes; 
         currentFilteredWeight += itemWeight;
-
-        let netAvailable = totalQty; 
 
         return `
             <tr>
                 <td style="font-weight:bold; color:#3498db;">${i.name}</td>
                 <td>${totalQty + itemRes} ق</td>
-                <td style="font-weight:bold; color:${netAvailable < 0 ? 'var(--danger)' : 'lightgreen'}">${netAvailable} ق</td>
+                <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
+                <td>
+                    <span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</span>
+                </td>
             </tr>`;
     }).join('');
     
