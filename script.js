@@ -690,3 +690,50 @@ function renderInventory() {
     document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
     document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
 }
+
+// ==================== دالة تصدير المتاح للبيع إلى إكسل ====================
+function exportAvailableToExcel() {
+    const table = document.getElementById("invTable");
+    
+    if (!table) {
+        alert("لم يتم العثور على بيانات المتاح للبيع.");
+        return;
+    }
+
+    // بناء الهيكل الأساسي لملف إكسل مع دعم الاتجاه والترميز العربي وتنسيق الألوان الخاص بك
+    const excelTemplate = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <style>
+                table { direction: rtl; border-collapse: collapse; font-family: 'Segoe UI', Tahoma, sans-serif; }
+                th, td { border: 1px solid #D9D9D9; padding: 8px; text-align: center; }
+                th { background-color: #252525; color: #f1c40f; font-weight: bold; }
+                td { color: #000; } /* لضمان ظهور الخط بالأسود في الإكسل */
+            </style>
+        </head>
+        <body>
+            ${table.outerHTML}
+        </body>
+        </html>
+    `;
+
+    // استخدام Blob وتشفير UTF-8 للحفاظ على اللغة العربية بشكل سليم
+    const blob = new Blob(['\uFEFF' + excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    // إنشاء رابط وهمي لتنفيذ التحميل
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    
+    // تسمية الملف الديناميكية مع تاريخ اليوم
+    const today = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
+    downloadLink.download = `تقرير_المتاح_للبيع_${today}.xls`;
+    
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    
+    // تنظيف المتصفح بعد التحميل
+    document.body.removeChild(downloadLink);
+    URL.revokeObjectURL(url);
+}

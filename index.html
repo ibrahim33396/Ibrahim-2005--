@@ -364,6 +364,7 @@
                     <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
                     <div id="invDropdown" class="custom-dropdown-list"></div>
                 </div>
+                <button class="btn-primary" onclick="exportAvailableToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px; background-color: #1F497D; color: white; border: none;">📥 تصدير المتاح (Excel)</button>
             </div>
             <div class="table-container">
                 <table id="invTable">
