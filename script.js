@@ -426,7 +426,7 @@ function saveFinalInvoice(type) {
     alert("تم حفظ الفاتورة سحابياً!");
 }
 
-// ==================== نظام التثبيت والتحكم في المحجوزات (معدّل للتعديل والحذف) ====================
+// ==================== نظام التثبيت والتحكم في المحجوزات ====================
 function addReservation() {
     const name = document.getElementById('resName').value;
     const qty = parseInt(document.getElementById('resQty').value) || 0;
@@ -441,7 +441,6 @@ function addReservation() {
     if (!item.stocks) item.stocks = {};
 
     if(editIndex > -1) {
-        // حالة التعديل على حجز قديم: نرجع الكمية القديمة للمخزن أولاً لإعادة تقييم الحسبة
         const oldRes = reservations[editIndex];
         const oldItem = db.find(i => i.name === oldRes.name);
         if(oldItem && oldItem.stocks) {
@@ -449,10 +448,8 @@ function addReservation() {
             oldItem.stocks[oldWH] = (oldItem.stocks[oldWH] || 0) + oldRes.qty;
         }
         
-        // التحقق من أن الرصيد يكفي بعد إعادة الإرجاع المؤقت
         let currentStock = item.stocks[targetWH] || 0;
         if (currentStock < qty) {
-            // رصيد غير كافٍ: نعيد الحجز القديم كما كان ونرفض التعديل
             if(oldItem && oldItem.stocks) {
                 let oldWH = oldRes.wh || whs[0] || "المخزن الرئيسي";
                 oldItem.stocks[oldWH] -= oldRes.qty;
@@ -460,14 +457,12 @@ function addReservation() {
             return alert(`🚨 عذراً! الرصيد لا يكفي الحجز المحدث.`);
         }
 
-        // الخصم وتحديث الحجز
         item.stocks[targetWH] -= qty;
         reservations[editIndex] = { name, qty, customer, notes, wh: targetWH, date: oldRes.date };
         
         document.getElementById('editResIndex').value = "-1";
         document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
     } else {
-        // حالة إضافة حجز جديد تماماً
         let currentStock = item.stocks[targetWH] || 0;
         if (currentStock < qty) return alert(`🚨 عذراً! الرصيد لا يكفي الحجز.`);
         
@@ -534,7 +529,7 @@ function removeReservation(idx) {
     }
 }
 
-// ==================== نظام مسح وتصدير تقارير الأرشيف ====================
+// ==================== نظام مسح وتصدير تقارير الأرشيف الجاهز والسلس للإكسل ====================
 function deleteLogItem(idx) {
     if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟")) {
         const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
@@ -553,22 +548,88 @@ function deleteLogItem(idx) {
     }
 }
 
+// 1. ميزة تصدير الجرد الكلي بسلاسة وتوافق تام
 function exportInventoryToExcel() {
-    let csv = "\uFEFFالمادة;المستودع;الرصيد;الوزن\n";
-    db.forEach(i => {
-        whs.forEach(w => {
-            let q = i.stocks && i.stocks[w] ? i.stocks[w] : 0;
-            let wt = i.weights && i.weights[w] ? i.weights[w] : 0;
-            if (q !== 0 || wt !== 0) csv += `${i.name};${w};${q};${wt.toFixed(2)}\n`;
-        });
+    const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
+    const selectedWHFilter = document.getElementById('stockWHFilter') ? document.getElementById('stockWHFilter').value : 'ALL';
+    
+    let filteredStockDb = db.filter(i => !selectedStockItem ? i.name.toLowerCase().includes(stockSearchQuery) : i.name === selectedStockItem);
+
+    if (filteredStockDb.length === 0) {
+        alert("⚠️ لا توجد بيانات جرد لتصديرها.");
+        return;
+    }
+
+    let csvContent = "\uFEFFالمادة;المستودع;الرصيد المتاح (قطع);الوزن الحالي (كجم)\n";
+
+    filteredStockDb.forEach(i => {
+        if (selectedWHFilter === 'ALL') {
+            whs.forEach(w => {
+                let q = i.stocks && i.stocks[w] ? i.stocks[w] : 0;
+                let wt = i.weights && i.weights[w] ? i.weights[w] : 0;
+                if (q !== 0 || wt !== 0) {
+                    csvContent += `"${i.name}";"${w}";${q};${wt.toFixed(2)}\n`;
+                }
+            });
+        } else {
+            let q = i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0;
+            let wt = i.weights && i.weights[selectedWHFilter] ? i.weights[selectedWHFilter] : 0;
+            if (q !== 0 || wt !== 0) {
+                csvContent += `"${i.name}";"${selectedWHFilter}";${q};${wt.toFixed(2)}\n`;
+            }
+        }
     });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
+    const today = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
+    
     link.href = URL.createObjectURL(blob);
-    link.download = `تقرير_الجرد_${new Date().toLocaleDateString('ar-EG')}.csv`;
+    link.download = `كشف_الجرد_المنظم_${today}.csv`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
+// 2. ميزة تصدير المتاح للبيع بسلاسة وتوافق تام
+function exportAvailableToExcel() {
+    const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
+    let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
+
+    if (filteredInvDb.length === 0) {
+        alert("⚠️ لا توجد بيانات متاحة للتصدير حالياً.");
+        return;
+    }
+
+    let csvContent = "\uFEFFاسم المادة;إجمالي الداخل (قطع);إجمالي الخارج (قطع);الرصيد الكلي (قطع);الصافي للبيع (قطع)\n";
+
+    filteredInvDb.forEach(i => {
+        let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+        let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
+        
+        let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
+        let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
+
+        let totalBalance = totalQty + itemRes; 
+        let netAvailable = totalQty;           
+
+        csvContent += `"${i.name}";${totalInFromLogs};${totalOutFromLogs};${totalBalance};${netAvailable}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const today = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
+    
+    link.href = URL.createObjectURL(blob);
+    link.download = `تقرير_المتاح_للبيع_${today}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+}
+
+// 3. تصدير أرشيف الحركات العام
 function exportToExcel() {
     const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
     let logsToExport = logs;
@@ -582,7 +643,10 @@ function exportToExcel() {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `أرشيف_الحركات.csv`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
 }
 
 // ==================== عمليات بناء الجداول والعرض الفوري الفلاتر ====================
@@ -601,7 +665,6 @@ function renderData() {
         </tr>
     `).join('');
 
-    // --- تعديل الجرد الكلي لدعم فرز كل مستودع لحال ---
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('stockWHFilter') ? document.getElementById('stockWHFilter').value : 'ALL';
     
@@ -628,7 +691,6 @@ function renderData() {
         return `<tr><td style="font-weight:bold; color:#3498db;">${i.name}</td><td>${piecesDetail || '-'}</td><td>${weightsDetail || '-'}</td><td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td></tr>`;
     }).join('');
 
-    // --- بناء جدول المحجوزات المطور بزر التعديل ---
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
     let filteredRes = reservations.filter(r => !resQuery || (r.customer && r.customer.toLowerCase().includes(resQuery)) || (r.name && r.name.toLowerCase().includes(resQuery)));
 
@@ -665,7 +727,6 @@ function renderInventory() {
         let itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
         let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
         
-        // حساب إجمالي الحركات (الداخل والخارج) للمادة بناءً على الأرشيف
         let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
         let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
 
@@ -689,51 +750,4 @@ function renderInventory() {
     document.getElementById('grandTotalQty').innerText = currentFilteredQty + " قطعة";
     document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
     document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
-}
-
-// ==================== دالة تصدير المتاح للبيع إلى إكسل ====================
-function exportAvailableToExcel() {
-    const table = document.getElementById("invTable");
-    
-    if (!table) {
-        alert("لم يتم العثور على بيانات المتاح للبيع.");
-        return;
-    }
-
-    // بناء الهيكل الأساسي لملف إكسل مع دعم الاتجاه والترميز العربي وتنسيق الألوان الخاص بك
-    const excelTemplate = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-            <meta charset="utf-8">
-            <style>
-                table { direction: rtl; border-collapse: collapse; font-family: 'Segoe UI', Tahoma, sans-serif; }
-                th, td { border: 1px solid #D9D9D9; padding: 8px; text-align: center; }
-                th { background-color: #252525; color: #f1c40f; font-weight: bold; }
-                td { color: #000; } /* لضمان ظهور الخط بالأسود في الإكسل */
-            </style>
-        </head>
-        <body>
-            ${table.outerHTML}
-        </body>
-        </html>
-    `;
-
-    // استخدام Blob وتشفير UTF-8 للحفاظ على اللغة العربية بشكل سليم
-    const blob = new Blob(['\uFEFF' + excelTemplate], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    
-    // إنشاء رابط وهمي لتنفيذ التحميل
-    const downloadLink = document.createElement("a");
-    downloadLink.href = url;
-    
-    // تسمية الملف الديناميكية مع تاريخ اليوم
-    const today = new Date().toLocaleDateString('ar-EG').replace(/\//g, '-');
-    downloadLink.download = `تقرير_المتاح_للبيع_${today}.xls`;
-    
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    
-    // تنظيف المتصفح بعد التحميل
-    document.body.removeChild(downloadLink);
-    URL.revokeObjectURL(url);
 }
