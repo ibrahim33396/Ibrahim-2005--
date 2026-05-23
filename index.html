@@ -244,7 +244,6 @@
             font-weight: bold;
         }
 
-        /* نافذة التعديل السريع (Modal) */
         .modal {
             display: none;
             position: fixed;
@@ -317,9 +316,16 @@
 
         <div id="stock-view" class="tab-content" style="display: block;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                <div class="searchable-select-container" style="max-width: 250px;">
-                    <input type="text" id="stockSearch" placeholder="🔍 اكتب اسم الصنف للبحث..." oninput="filterGlobalSearch('stock')" onfocus="showGlobalSearchDropdown('stock')" autocomplete="off">
-                    <div id="stockDropdown" class="custom-dropdown-list"></div>
+                <div style="display: flex; gap: 10px; flex: 1; max-width: 550px;">
+                    <div class="searchable-select-container" style="max-width: 250px;">
+                        <input type="text" id="stockSearch" placeholder="🔍 اكتب اسم الصنف للبحث..." oninput="filterGlobalSearch('stock')" onfocus="showGlobalSearchDropdown('stock')" autocomplete="off">
+                        <div id="stockDropdown" class="custom-dropdown-list"></div>
+                    </div>
+                    <div style="max-width: 250px; width: 100%;">
+                        <select id="stockWHFilter" onchange="renderData()" style="border-color: var(--asfour-yellow); background: #1f1f1f;">
+                            <option value="ALL">🌍 كل المستودعات</option>
+                        </select>
+                    </div>
                 </div>
                 <button class="btn-primary" onclick="exportInventoryToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px;">📊 تصدير Excel</button>
             </div>
@@ -330,7 +336,7 @@
                             <th>المادة</th>
                             <th>القطع بمستودعك</th>
                             <th>الوزن بمستودعك</th>
-                            <th>الإجمالي</th>
+                            <th>الإجمالي بالتصفية</th>
                         </tr>
                     </thead>
                     <tbody id="stockBody"></tbody>
@@ -358,13 +364,14 @@
                     <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
                     <div id="invDropdown" class="custom-dropdown-list"></div>
                 </div>
-                <button class="btn-action" id="clearInvFilterBtn" style="display:none; width:auto; padding:8px 12px; font-size:12px;" onclick="clearInventoryFilter()">❌ إلغاء الفلتر</button>
             </div>
             <div class="table-container">
                 <table id="invTable">
                     <thead>
                         <tr>
                             <th>اسم المادة</th>
+                            <th>إجمالي الداخل</th>
+                            <th>إجمالي الخارج</th>
                             <th>الرصيد الكلي</th>
                             <th>الصافي للبيع</th>
                             <th>إجراءات</th>
@@ -372,26 +379,6 @@
                     </thead>
                     <tbody id="invBody"></tbody>
                 </table>
-            </div>
-        </div>
-
-        <div id="editMaterialModal" class="modal">
-            <div class="modal-content">
-                <h3 style="color: var(--asfour-yellow); margin-bottom: 15px; font-size: 16px; display: flex; justify-content: space-between;">
-                    <span>📝 تعديل بيانات المادة</span>
-                    <span onclick="closeEditModal()" style="cursor: pointer; color: var(--danger);">✕</span>
-                </h3>
-                <input type="hidden" id="editItemIdx">
-                <div style="margin-bottom: 12px;">
-                    <label>اسم المادة الحالي</label>
-                    <input type="text" id="editItemName" placeholder="اسم الصنف">
-                </div>
-                <div id="editItemWarehousesContainer" style="margin-bottom: 15px;">
-                    </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-primary" onclick="saveQuickEdit()">💾 حفظ التعديلات</button>
-                    <button class="btn-action" style="background:#444;" onclick="closeEditModal()">إلغاء</button>
-                </div>
             </div>
         </div>
 
@@ -433,7 +420,7 @@
             <div class="table-container">
                 <table id="inInvoiceTable">
                     <thead>
-                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>حذف</th></tr>
+                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>إجراء</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -479,7 +466,7 @@
             <div class="table-container">
                 <table id="outInvoiceTable">
                     <thead>
-                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>حذف</th></tr>
+                        <tr><th>المادة</th><th>العدد</th><th>المستودع</th><th>الوزن</th><th>إجراء</th></tr>
                     </thead>
                     <tbody></tbody>
                 </table>
@@ -496,6 +483,7 @@
                 </div>
             </div>
             <div class="form-group">
+                <input type="hidden" id="editResIndex" value="-1">
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
                     <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" autocomplete="off">
@@ -523,7 +511,7 @@
                             <th>الزبون / التاريخ</th>
                             <th>المادة المحجوزة</th>
                             <th>العدد الأساسي</th>
-                            <th>إلغاء</th>
+                            <th>إجراءات</th>
                         </tr>
                     </thead>
                     <tbody id="resBody"></tbody>
