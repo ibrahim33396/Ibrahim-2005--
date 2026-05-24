@@ -349,7 +349,7 @@
                         <div id="invDropdown" class="custom-dropdown-list"></div>
                     </div>
                     <div style="max-width: 250px; width: 100%;">
-                        <select id="invWHFilter" onchange="renderData()" style="border-color: var(--asfour-yellow); background: #1f1f1f; color: #fff; padding: 10px; border-radius: 5px;">
+                        <select id="invWHFilter" onchange="renderData()" style="border-color: var(--asfour-yellow); background: #1f1f1f; color: #fff; padding: 10px; border-radius: 5px; width: 100%;">
                             <option value="ALL">🌍 كل المستودعات</option>
                         </select>
                     </div>
@@ -383,6 +383,7 @@
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
                     <input type="text" id="inNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('in')" onfocus="showDropdown('in')" onkeydown="handleDropdownNavigation(event, 'in')" autocomplete="off">
+                    <input type="hidden" id="inName">
                     <div id="inDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
@@ -428,6 +429,7 @@
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
                     <input type="text" id="outNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('out')" onfocus="showDropdown('out')" onkeydown="handleDropdownNavigation(event, 'out')" autocomplete="off">
+                    <input type="hidden" id="outName">
                     <div id="outDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
@@ -476,6 +478,7 @@
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
                     <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" onkeydown="handleDropdownNavigation(event, 'res')" autocomplete="off">
+                    <input type="hidden" id="resName">
                     <div id="resDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
@@ -553,10 +556,16 @@
                     </div>
                 </div>
                 <div>
-                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">📍 إضافة هناجر / مستودعات</h3>
-                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">📍 إدارة الهناجر / المستودعات</h3>
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                         <input type="text" id="newWHName" placeholder="اسم الهنقر" onkeydown="if(event.key==='Enter') addNewWH()">
                         <button class="btn-primary" onclick="addNewWH()" style="width: auto; padding: 0 15px;">حفظ</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>المستودع</th><th>إجراءات</th></tr></thead>
+                            <tbody id="manageWHBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
