@@ -52,7 +52,7 @@ dbRef.on('value', (snapshot) => {
         logs = data.logs || [];
         reservations = data.reservations || [];
         
-        // تحديث منسدلة فلاتر المستودعات في صفحة الجرد الكلي
+        // تحديث منسدلات فلاتر المستودعات في صفحة الجرد الكلي والمتاح للبيع
         updateWHDropdownFilter();
 
         if (document.getElementById('main-app').style.display === 'block') {
@@ -61,17 +61,28 @@ dbRef.on('value', (snapshot) => {
     }
 });
 
-// دالة تحديث منسدلة المستودعات
+// دالة تحديث منسدلات المستودعات في الفلاتر والشاشات
 function updateWHDropdownFilter() {
-    const filterEl = document.getElementById('stockWHFilter');
-    if(filterEl) {
-        const currentVal = filterEl.value;
+    const stockFilterEl = document.getElementById('stockWHFilter');
+    if(stockFilterEl) {
+        const currentVal = stockFilterEl.value;
         let options = '<option value="ALL">🌍 كل المستودعات</option>';
         whs.forEach(w => {
             options += `<option value="${w}">📍 ${w}</option>`;
         });
-        filterEl.innerHTML = options;
-        filterEl.value = currentVal; 
+        stockFilterEl.innerHTML = options;
+        stockFilterEl.value = currentVal; 
+    }
+
+    const invFilterEl = document.getElementById('invWHFilter');
+    if(invFilterEl) {
+        const currentVal = invFilterEl.value;
+        let options = '<option value="ALL">🌍 كل المستودعات</option>';
+        whs.forEach(w => {
+            options += `<option value="${w}">📍 ${w}</option>`;
+        });
+        invFilterEl.innerHTML = options;
+        invFilterEl.value = currentVal;
     }
 }
 
@@ -183,13 +194,13 @@ function showDropdown(type) {
     closeAllDropdowns();
     currentDropdownFocusIndex = -1;
     const dropdown = document.getElementById(type + 'Dropdown');
-    const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
+    const inputVal = document.getElementById(type + 'NameSearch').value.trim().toLowerCase();
     
     let filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
     if(filtered.length === 0) filtered = db;
 
     dropdown.innerHTML = filtered.map(item => `
-        <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
+        <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name.replace(/'/g, "\\'")}')">${item.name}</div>
     `).join('');
     
     dropdown.style.display = 'block';
@@ -198,13 +209,13 @@ function showDropdown(type) {
 function filterDropdown(type) {
     currentDropdownFocusIndex = -1;
     const dropdown = document.getElementById(type + 'Dropdown');
-    const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
+    const inputVal = document.getElementById(type + 'NameSearch').value.trim().toLowerCase();
     
     const filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
     
     if(filtered.length > 0) {
         dropdown.innerHTML = filtered.map(item => `
-            <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
+            <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name.replace(/'/g, "\\'")}')">${item.name}</div>
         `).join('');
         dropdown.style.display = 'block';
     } else {
@@ -214,7 +225,6 @@ function filterDropdown(type) {
 
 function selectDropdownItem(type, value) {
     document.getElementById(type + 'NameSearch').value = value;
-    document.getElementById(type + 'Name').value = value;
     document.getElementById(type + 'Dropdown').style.display = 'none';
     currentDropdownFocusIndex = -1;
     
@@ -234,7 +244,7 @@ function showGlobalSearchDropdown(view) {
     if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
     
     const dropdown = document.getElementById(dropdownId);
-    const inputVal = document.getElementById(inputId).value.toLowerCase();
+    const inputVal = document.getElementById(inputId).value.trim().toLowerCase();
     
     let listItems = [];
     if(view === 'stock' || view === 'inv') {
@@ -251,7 +261,7 @@ function showGlobalSearchDropdown(view) {
     if(filtered.length === 0) filtered = listItems.slice(0, 15);
 
     dropdown.innerHTML = filtered.map(name => `
-        <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
+        <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name.replace(/'/g, "\\'")}')">${name}</div>
     `).join('');
     
     dropdown.style.display = 'block';
@@ -266,7 +276,7 @@ function filterGlobalSearch(view) {
     if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
     
     const dropdown = document.getElementById(dropdownId);
-    const inputVal = document.getElementById(inputId).value.toLowerCase();
+    const inputVal = document.getElementById(inputId).value.trim().toLowerCase();
     
     let listItems = [];
     if(view === 'stock' || view === 'inv') {
@@ -283,7 +293,7 @@ function filterGlobalSearch(view) {
     
     if(filtered.length > 0) {
         dropdown.innerHTML = filtered.map(name => `
-            <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
+            <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name.replace(/'/g, "\\'")}')">${name}</div>
         `).join('');
         dropdown.style.display = 'block';
     } else {
@@ -328,7 +338,7 @@ document.addEventListener('click', function(e) {
 // ==================== وظائف إعدادات المواد والمستودعات ====================
 function addNewItem() {
     const val = document.getElementById('newProdItem').value.trim();
-    if(!val || db.find(i => i.name === val)) return;
+    if(!val || db.find(i => i.name.toLowerCase() === val.toLowerCase())) return;
     db.push({name: val, stocks: {}, weights: {}}); 
     document.getElementById('newProdItem').value = '';
     save();
@@ -363,7 +373,10 @@ function quickEditItem(itemName) {
     const item = db.find(i => i.name === itemName);
     if (!item) return;
 
-    let targetWH = whs[0] || "المخزن الرئيسي";
+    // جعل التعديل يستهدف المستودع المختار في الفلتر، وإذا كان "ALL" يأخذ أول مستودع متوفر
+    const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
+    let targetWH = selectedWHFilter === 'ALL' ? (whs[0] || "المخزن الرئيسي") : selectedWHFilter;
+    
     if (!item.stocks) item.stocks = {};
     if (!item.weights) item.weights = {};
 
@@ -394,7 +407,7 @@ function quickEditItem(itemName) {
         wh: targetWH,
         weight: newWeight,
         sender: "المدير (تعديل مباشر)",
-        notes: `تم تصحيح الرصيد يدوياً من المتاح للبيع`
+        notes: `تم تصحيح الرصيد يدوياً من المتاح للبيع في ${targetWH}`
     });
 
     save();
@@ -403,21 +416,35 @@ function quickEditItem(itemName) {
 
 // ==================== نظام إدارة الفواتير والترحيل للمخازن ====================
 function addToInvoice(type) {
-    const name = document.getElementById(type+'Name').value;
+    let inputSearchVal = document.getElementById(type+'NameSearch').value.trim();
     const qty = parseInt(document.getElementById(type+'Qty').value) || 0;
     const wh = document.getElementById(type+'WH').value;
     const weight = parseFloat(document.getElementById(type+'Weight').value) || 0;
     const sender = document.getElementById(type+'Sender').value.trim();
     const notes = document.getElementById(type+'Notes').value.trim();
     
+    // التحقق والمطابقة الذكية من اسم الصنف المدخل لضمان عدم حدوث أخطاء
+    let matchedItem = db.find(item => item.name.toLowerCase() === inputSearchVal.toLowerCase());
+    
+    // إذا لم يتطابق الاسم تماماً، نبحث عن أقرب صنف يبدأ أو يحتوي على النص المكتوب
+    if (!matchedItem && inputSearchVal) {
+        matchedItem = db.find(item => item.name.toLowerCase().includes(inputSearchVal.toLowerCase()));
+    }
+
+    if(!matchedItem) {
+        return alert("🚨 خطأ: اسم الصنف غير صحيح أو غير مسجل بالنظام، يرجى اختياره من القائمة المنسدلة.");
+    }
+
+    const name = matchedItem.name; // الاعتماد التام على الاسم الحقيقي المسجل بقاعدة البيانات
+
     let rawDate = document.getElementById(type+'Date').value;
     if(!rawDate) rawDate = new Date().toISOString().split('T')[0];
     const formattedDate = rawDate.split('-').reverse().join('/');
 
-    if(!name || qty <= 0) return alert("اختر مادة وكمية صحيحة");
+    if(qty <= 0) return alert("يرجى إدخال كمية صحيحة أكبر من صفر");
     
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
-    ['NameSearch', 'Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
+    ['NameSearch', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
     renderInvoice(type);
     
     // بعد الإضافة الناجحة، أعد الفوكس تلقائياً إلى حقل اختيار المادة لإدخال سطر جديد بالكامل عبر الكيبورد بسرعة
@@ -450,7 +477,6 @@ function renderInvoice(type) {
 function editInvoiceItem(type, idx) {
     const item = tempInvoice[type][idx];
     document.getElementById(type+'NameSearch').value = item.name;
-    document.getElementById(type+'Name').value = item.name;
     document.getElementById(type+'Qty').value = item.qty;
     document.getElementById(type+'WH').value = item.wh;
     document.getElementById(type+'Weight').value = item.weight;
@@ -507,17 +533,22 @@ function saveFinalInvoice(type) {
 
 // ==================== نظام التثبيت والتحكم في المحجوزات ====================
 function addReservation() {
-    const name = document.getElementById('resName').value;
+    let inputSearchVal = document.getElementById('resNameSearch').value.trim();
     const qty = parseInt(document.getElementById('resQty').value) || 0;
     const customer = document.getElementById('resCustomer').value.trim();
     const notes = document.getElementById('resNotes').value.trim();
     const editIndex = parseInt(document.getElementById('editResIndex').value);
     
-    const item = db.find(i => i.name === name);
-    if(!item || qty <= 0) return alert("اختر مادة صحيحة");
+    let matchedItem = db.find(item => item.name.toLowerCase() === inputSearchVal.toLowerCase());
+    if(!matchedItem && inputSearchVal) {
+        matchedItem = db.find(item => item.name.toLowerCase().includes(inputSearchVal.toLowerCase()));
+    }
+
+    if(!matchedItem || qty <= 0) return alert("اختر مادة صحيحة وكمية صالحة");
     
+    const name = matchedItem.name;
     let targetWH = whs[0] || "المخزن الرئيسي";
-    if (!item.stocks) item.stocks = {};
+    if (!matchedItem.stocks) matchedItem.stocks = {};
 
     if(editIndex > -1) {
         const oldRes = reservations[editIndex];
@@ -527,7 +558,7 @@ function addReservation() {
             oldItem.stocks[oldWH] = (oldItem.stocks[oldWH] || 0) + oldRes.qty;
         }
         
-        let currentStock = item.stocks[targetWH] || 0;
+        let currentStock = matchedItem.stocks[targetWH] || 0;
         if (currentStock < qty) {
             if(oldItem && oldItem.stocks) {
                 let oldWH = oldRes.wh || whs[0] || "المخزن الرئيسي";
@@ -536,21 +567,21 @@ function addReservation() {
             return alert(`🚨 عذراً! الرصيد لا يكفي الحجز المحدث.`);
         }
 
-        item.stocks[targetWH] -= qty;
+        matchedItem.stocks[targetWH] -= qty;
         reservations[editIndex] = { name, qty, customer, notes, wh: targetWH, date: oldRes.date };
         
         document.getElementById('editResIndex').value = "-1";
         document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
     } else {
-        let currentStock = item.stocks[targetWH] || 0;
+        let currentStock = matchedItem.stocks[targetWH] || 0;
         if (currentStock < qty) return alert(`🚨 عذراً! الرصيد لا يكفي الحجز.`);
         
-        item.stocks[targetWH] -= qty;
+        matchedItem.stocks[targetWH] -= qty;
         const todayDate = new Date().toLocaleDateString('ar-EG');
         reservations.push({ name, qty, customer, notes, wh: targetWH, date: todayDate });
     }
 
-    ['resNameSearch', 'resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
+    ['resNameSearch', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
     alert("✅ تم الحفظ وتحديث الحجز بنجاح!");
     if(document.getElementById('resNameSearch')) document.getElementById('resNameSearch').focus();
@@ -571,7 +602,6 @@ function editReservation(idx) {
     if (actualIndex !== -1) {
         const res = reservations[actualIndex];
         document.getElementById('resNameSearch').value = res.name;
-        document.getElementById('resName').value = res.name;
         document.getElementById('resQty').value = res.qty;
         document.getElementById('resCustomer').value = res.customer || '';
         document.getElementById('resNotes').value = res.notes || '';
@@ -672,9 +702,11 @@ function exportInventoryToExcel() {
     URL.revokeObjectURL(link.href);
 }
 
-// 2. ميزة تصدير المتاح للبيع بسلاسة وتوافق تام
+// 2. ميزة تصدير المتاح للبيع بناءً على فلتر المستودعات الجديد
 function exportAvailableToExcel() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
+    const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
+    
     let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
 
     if (filteredInvDb.length === 0) {
@@ -682,19 +714,27 @@ function exportAvailableToExcel() {
         return;
     }
 
-    let csvContent = "\uFEFFاسم المادة;إجمالي الداخل (قطع);إجمالي الخارج (قطع);الرصيد الكلي (قطع);الصافي للبيع (قطع)\n";
+    let csvContent = "\uFEFFاسم المادة;المستودع;إجمالي الداخل (قطع);إجمالي الخارج (قطع);الرصيد الكلي (قطع);الصافي للبيع (قطع)\n";
 
     filteredInvDb.forEach(i => {
-        let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+        let totalQty = 0;
+        let totalInFromLogs = 0;
+        let totalOutFromLogs = 0;
+
+        if (selectedWHFilter === 'ALL') {
+            totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+            totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
+            totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
+        } else {
+            totalQty = i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0;
+            totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل' && l.wh === selectedWHFilter).reduce((sum, curr) => sum + curr.qty, 0);
+            totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج' && l.wh === selectedWHFilter).reduce((sum, curr) => sum + curr.qty, 0);
+        }
+
         let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
-        
-        let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
-        let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
-
         let totalBalance = totalQty + itemRes; 
-        let netAvailable = totalQty;           
 
-        csvContent += `"${i.name}";${totalInFromLogs};${totalOutFromLogs};${totalBalance};${netAvailable}\n`;
+        csvContent += `"${i.name}";"${selectedWHFilter === 'ALL' ? 'كل المستودعات' : selectedWHFilter}";${totalInFromLogs};${totalOutFromLogs};${totalBalance};${totalQty}\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -806,19 +846,33 @@ function renderData() {
 
 function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
+    const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
+    
     let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
 
     let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0;
 
     if(document.getElementById('invBody')) {
         document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
-            let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
-            let itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+            let totalQty = 0;
+            let itemWeight = 0;
+            let totalInFromLogs = 0;
+            let totalOutFromLogs = 0;
+
+            if (selectedWHFilter === 'ALL') {
+                totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+                itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+                totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
+                totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
+            } else {
+                totalQty = i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0;
+                itemWeight = i.weights && i.weights[selectedWHFilter] ? i.weights[selectedWHFilter] : 0;
+                totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل' && l.wh === selectedWHFilter).reduce((sum, curr) => sum + curr.qty, 0);
+                totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج' && l.wh === selectedWHFilter).reduce((sum, curr) => sum + curr.qty, 0);
+            }
+
             let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
             
-            let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
-            let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
-
             currentFilteredQty += (totalQty + itemRes); 
             currentFilteredRes += itemRes; 
             currentFilteredWeight += itemWeight;
@@ -831,7 +885,7 @@ function renderInventory() {
                     <td>${totalQty + itemRes} ق</td>
                     <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
                     <td>
-                        <span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</span>
+                        <span onclick="quickEditItem('${i.name.replace(/'/g, "\\'")}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</span>
                     </td>
                 </tr>`;
         }).join('');
