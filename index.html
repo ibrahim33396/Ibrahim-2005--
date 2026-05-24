@@ -166,7 +166,7 @@
             color: #fff;
         }
 
-        .custom-dropdown-item:hover {
+        .custom-dropdown-item:hover, .custom-dropdown-item.focused {
             background: var(--asfour-yellow);
             color: var(--asfour-dark);
             font-weight: bold;
@@ -178,6 +178,10 @@
             font-weight: bold;
             cursor: pointer;
             border: none;
+        }
+
+        button.btn-primary:focus {
+            outline: 2px solid #fff;
         }
 
         button.btn-action {
@@ -297,7 +301,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                 <div style="display: flex; gap: 10px; flex: 1; max-width: 550px;">
                     <div class="searchable-select-container" style="max-width: 250px;">
-                        <input type="text" id="stockSearch" placeholder="🔍 اكتب اسم الصنف للبحث..." oninput="filterGlobalSearch('stock')" onfocus="showGlobalSearchDropdown('stock')" autocomplete="off">
+                        <input type="text" id="stockSearch" placeholder="🔍 اكتب اسم الصنف للبحث..." oninput="filterGlobalSearch('stock')" onfocus="showGlobalSearchDropdown('stock')" onkeydown="handleDropdownNavigation(event, 'stock')" autocomplete="off">
                         <div id="stockDropdown" class="custom-dropdown-list"></div>
                     </div>
                     <div style="max-width: 250px; width: 100%;">
@@ -340,7 +344,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                 <div class="searchable-select-container" style="max-width: 250px;">
-                    <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" autocomplete="off">
+                    <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" onkeydown="handleDropdownNavigation(event, 'inv')" autocomplete="off">
                     <div id="invDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <button class="btn-primary" onclick="exportAvailableToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px; background-color: #1F497D; color: white; border: none;">📥 تصدير المتاح (Excel)</button>
@@ -371,7 +375,7 @@
                 </div>
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
-                    <input type="text" id="inNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('in')" onfocus="showDropdown('in')" autocomplete="off">
+                    <input type="text" id="inNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('in')" onfocus="showDropdown('in')" onkeydown="handleDropdownNavigation(event, 'in')" autocomplete="off">
                     <input type="hidden" id="inName">
                     <div id="inDropdown" class="custom-dropdown-list"></div>
                 </div>
@@ -393,9 +397,9 @@
                 </div>
                 <div>
                     <label>ملاحظات</label>
-                    <input type="text" id="inNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_IN')">
+                    <input type="text" id="inNotes" placeholder="..." onkeydown="kbNav(event, 'btn_SUBMIT_IN')">
                 </div>
-                <button class="btn-primary" id="btn_SUBMIT_IN" onclick="addToInvoice('in')">➕ إضافة</button>
+                <button class="btn-primary" id="btn_SUBMIT_IN" onclick="addToInvoice('in')" onkeydown="kbNav(event, 'inDate')">➕ إضافة</button>
             </div>
             <div class="table-container">
                 <table id="inInvoiceTable">
@@ -417,7 +421,7 @@
                 </div>
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
-                    <input type="text" id="outNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('out')" onfocus="showDropdown('out')" autocomplete="off">
+                    <input type="text" id="outNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('out')" onfocus="showDropdown('out')" onkeydown="handleDropdownNavigation(event, 'out')" autocomplete="off">
                     <input type="hidden" id="outName">
                     <div id="outDropdown" class="custom-dropdown-list"></div>
                 </div>
@@ -439,9 +443,9 @@
                 </div>
                 <div>
                     <label>ملاحظات</label>
-                    <input type="text" id="outNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_OUT')">
+                    <input type="text" id="outNotes" placeholder="..." onkeydown="kbNav(event, 'btn_SUBMIT_OUT')">
                 </div>
-                <button class="btn-primary" id="btn_SUBMIT_OUT" onclick="addToInvoice('out')">➕ إضافة</button>
+                <button class="btn-primary" id="btn_SUBMIT_OUT" onclick="addToInvoice('out')" onkeydown="kbNav(event, 'outDate')">➕ إضافة</button>
             </div>
             <div class="table-container">
                 <table id="outInvoiceTable">
@@ -458,7 +462,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
                 <h2 style="color: var(--orange); font-size: 16px;">🔒 إدارة المحجوزات</h2>
                 <div class="searchable-select-container" style="max-width: 260px;">
-                    <input type="text" id="resSearchQuery" placeholder="🔍 ابحث باسم الزبون أو الصنف المحجوز..." oninput="filterGlobalSearch('res')" onfocus="showGlobalSearchDropdown('res')" autocomplete="off">
+                    <input type="text" id="resSearchQuery" placeholder="🔍 ابحث باسم الزبون أو الصنف المحجوز..." oninput="filterGlobalSearch('res')" onfocus="showGlobalSearchDropdown('res')" onkeydown="handleDropdownNavigation(event, 'resGlobal')" autocomplete="off">
                     <div id="resSearchDropdown" class="custom-dropdown-list"></div>
                 </div>
             </div>
@@ -466,7 +470,7 @@
                 <input type="hidden" id="editResIndex" value="-1">
                 <div class="searchable-select-container">
                     <label>المادة (اكتب للبحث)</label>
-                    <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" autocomplete="off">
+                    <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" onkeydown="handleDropdownNavigation(event, 'res')" autocomplete="off">
                     <input type="hidden" id="resName">
                     <div id="resDropdown" class="custom-dropdown-list"></div>
                 </div>
@@ -480,9 +484,9 @@
                 </div>
                 <div>
                     <label>ملاحظات</label>
-                    <input type="text" id="resNotes" placeholder="..." onkeydown="kbNav(event, 'SUBMIT_RES')">
+                    <input type="text" id="resNotes" placeholder="..." onkeydown="kbNav(event, 'btn_SUBMIT_RES')">
                 </div>
-                <button class="btn-primary" id="btn_SUBMIT_RES" onclick="addReservation()">🔒 تثبيت الحجز</button>
+                <button class="btn-primary" id="btn_SUBMIT_RES" onclick="addReservation()" onkeydown="kbNav(event, 'resNameSearch')">🔒 تثبيت الحجز</button>
             </div>
             <div class="table-container">
                 <table id="resTable">
@@ -504,7 +508,7 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; max-width: 400px;">
                     <h2 style="font-size: 16px; white-space: nowrap;">📜 الأرشيف</h2>
                     <div class="searchable-select-container" style="flex: 1;">
-                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمشاهدة حركاته..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" autocomplete="off">
+                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمشاهدة حركاته..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" onkeydown="handleDropdownNavigation(event, 'logGlobal')" autocomplete="off">
                         <div id="logSearchDropdown" class="custom-dropdown-list"></div>
                     </div>
                 </div>

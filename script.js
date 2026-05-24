@@ -24,6 +24,9 @@ let tempInvoice = { in: [], out: [] };
 let selectedStockItem = null;
 let selectedInventoryItem = null;
 
+// مؤشر للتنقل بالأسهم داخل القوائم المنسدلة
+let currentDropdownFocusIndex = -1;
+
 // دالة تسجيل الدخول
 function login() {
     const passInput = document.getElementById('adminPass').value;
@@ -89,21 +92,70 @@ function setDefaultDates() {
     if(document.getElementById('outDate')) document.getElementById('outDate').value = today;
 }
 
-// دالة التنقل السريع بلوحة المفاتيح والـ Enter
+// دالة التنقل السريع بلوحة المفاتيح والـ Enter مع ميزة الإضافة الفورية للفواتير عند الضغط على زر الإضافة
 function kbNav(e, nextId) { 
     if (e.key === 'Enter') { 
         e.preventDefault(); 
-        if (nextId === 'SUBMIT_IN') {
+        
+        // إذا كان العنصر القادم هو زر الإضافة لـ (داخل) أو (خارج)
+        if (nextId === 'btn_SUBMIT_IN') {
             addToInvoice('in');
-        } else if (nextId === 'SUBMIT_OUT') {
+            return;
+        }
+        if (nextId === 'btn_SUBMIT_OUT') {
             addToInvoice('out');
-        } else if (nextId === 'SUBMIT_RES') {
-            addReservation();
-        } else {
-            const nextEl = document.getElementById(nextId);
-            if(nextEl) nextEl.focus(); 
+            return;
+        }
+
+        // للتنقل العادي بين الحقول الأخرى
+        const nextEl = document.getElementById(nextId);
+        if(nextEl) {
+            nextEl.focus();
         }
     } 
+}
+
+// نظام متقدم للتحكم والنزول بالأسهم واختيار المواد داخل القوائم المنسدلة الذكية
+function handleDropdownNavigation(e, type) {
+    let dropdownId = type + 'Dropdown';
+    if(type === 'resGlobal') dropdownId = 'resSearchDropdown';
+    if(type === 'logGlobal') dropdownId = 'logSearchDropdown';
+
+    const dropdown = document.getElementById(dropdownId);
+    if (!dropdown || dropdown.style.display === 'none') return;
+
+    const items = dropdown.getElementsByClassName('custom-dropdown-item');
+    
+    if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        currentDropdownFocusIndex++;
+        if (currentDropdownFocusIndex >= items.length) currentDropdownFocusIndex = 0;
+        setActiveDropdownItem(items);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        currentDropdownFocusIndex--;
+        if (currentDropdownFocusIndex < 0) currentDropdownFocusIndex = items.length - 1;
+        setActiveDropdownItem(items);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (currentDropdownFocusIndex > -1 && items[currentDropdownFocusIndex]) {
+            items[currentDropdownFocusIndex].click();
+        } else if (items.length > 0) {
+            items[0].click(); // اختيار الخيار الأول تلقائياً في حال لم يتم النزول بالأسهم
+        }
+    } else if (e.key === 'Escape') {
+        closeAllDropdowns();
+    }
+}
+
+function setActiveDropdownItem(items) {
+    for (let i = 0; i < items.length; i++) {
+        items[i].classList.remove('focused');
+    }
+    if (items[currentDropdownFocusIndex]) {
+        items[currentDropdownFocusIndex].classList.add('focused');
+        items[currentDropdownFocusIndex].scrollIntoView({ block: 'nearest' });
+    }
 }
 
 // دالة التنقل بين الشاشات (التبويبات)
@@ -117,7 +169,7 @@ function switchTab(id, btn) {
     selectedStockItem = null;
     selectedInventoryItem = null;
     document.getElementById('editResIndex').value = "-1";
-    document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
+    if(document.getElementById('btn_SUBMIT_RES')) document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
     
     if(document.getElementById('stockSearch')) document.getElementById('stockSearch').value = '';
     if(document.getElementById('invSearch')) document.getElementById('invSearch').value = '';
@@ -129,6 +181,7 @@ function switchTab(id, btn) {
 // ==================== نظام البحث واختيار المواد في الفواتير والحجوزات ====================
 function showDropdown(type) {
     closeAllDropdowns();
+    currentDropdownFocusIndex = -1;
     const dropdown = document.getElementById(type + 'Dropdown');
     const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
     
@@ -143,6 +196,7 @@ function showDropdown(type) {
 }
 
 function filterDropdown(type) {
+    currentDropdownFocusIndex = -1;
     const dropdown = document.getElementById(type + 'Dropdown');
     const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
     
@@ -162,6 +216,7 @@ function selectDropdownItem(type, value) {
     document.getElementById(type + 'NameSearch').value = value;
     document.getElementById(type + 'Name').value = value;
     document.getElementById(type + 'Dropdown').style.display = 'none';
+    currentDropdownFocusIndex = -1;
     
     if(document.getElementById(type + 'Qty')) {
         document.getElementById(type + 'Qty').focus();
@@ -171,6 +226,7 @@ function selectDropdownItem(type, value) {
 // ==================== نظام فلاتر البحث في شاشات العرض والجرد (أعلى الجداول) ====================
 function showGlobalSearchDropdown(view) {
     closeAllDropdowns();
+    currentDropdownFocusIndex = -1;
     let dropdownId = view + 'Dropdown';
     let inputId = view + 'Search';
     
@@ -202,6 +258,7 @@ function showGlobalSearchDropdown(view) {
 }
 
 function filterGlobalSearch(view) {
+    currentDropdownFocusIndex = -1;
     let dropdownId = view + 'Dropdown';
     let inputId = view + 'Search';
     
@@ -249,6 +306,7 @@ function selectGlobalSearchItem(view, value) {
     
     document.getElementById(inputId).value = value;
     document.getElementById(dropdownId).style.display = 'none';
+    currentDropdownFocusIndex = -1;
     
     if(view === 'stock') selectedStockItem = value;
     if(view === 'inv') selectedInventoryItem = value;
@@ -258,6 +316,7 @@ function selectGlobalSearchItem(view, value) {
 
 function closeAllDropdowns() {
     document.querySelectorAll('.custom-dropdown-list').forEach(d => d.style.display = 'none');
+    currentDropdownFocusIndex = -1;
 }
 
 document.addEventListener('click', function(e) {
@@ -274,6 +333,22 @@ function addNewItem() {
     document.getElementById('newProdItem').value = '';
     save();
 }
+
+// مستمع لحدث الضغط على Enter داخل أزرار الإضافة نفسها لمنع التكرار العشوائي
+document.addEventListener('DOMContentLoaded', function() {
+    ['btn_SUBMIT_IN', 'btn_SUBMIT_OUT'].forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        if(btn) {
+            btn.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const type = btnId === 'btn_SUBMIT_IN' ? 'in' : 'out';
+                    addToInvoice(type);
+                }
+            });
+        }
+    });
+});
 
 function addNewWH() {
     const val = document.getElementById('newWHName').value.trim();
@@ -344,6 +419,10 @@ function addToInvoice(type) {
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
     ['NameSearch', 'Name', 'Qty', 'Weight', 'Notes'].forEach(f => document.getElementById(type+f).value = '');
     renderInvoice(type);
+    
+    // بعد الإضافة الناجحة، أعد الفوكس تلقائياً إلى حقل اختيار المادة لإدخال سطر جديد بالكامل عبر الكيبورد بسرعة
+    const nextSearchInput = document.getElementById(type + 'NameSearch');
+    if (nextSearchInput) nextSearchInput.focus();
 }
 
 function renderInvoice(type) {
@@ -474,6 +553,7 @@ function addReservation() {
     ['resNameSearch', 'resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
     alert("✅ تم الحفظ وتحديث الحجز بنجاح!");
+    if(document.getElementById('resNameSearch')) document.getElementById('resNameSearch').focus();
 }
 
 function editReservation(idx) {
@@ -531,7 +611,7 @@ function removeReservation(idx) {
 
 // ==================== نظام مسح وتصدير تقارير الأرشيف الجاهز والسلس للإكسل ====================
 function deleteLogItem(idx) {
-    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟")) {
+    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف?")) {
         const customerQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
         let filteredLogs = logs;
         if(customerQuery) {
@@ -658,60 +738,68 @@ function renderData() {
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
     if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
 
-    document.getElementById('manageBody').innerHTML = db.map((i, idx) => `
-        <tr>
-            <td style="font-weight:bold;">${i.name}</td>
-            <td><span onclick="if(confirm('حذف الصنف نهائياً؟')){db.splice(${idx},1);save()}" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف</span></td>
-        </tr>
-    `).join('');
+    if(document.getElementById('manageBody')) {
+        document.getElementById('manageBody').innerHTML = db.map((i, idx) => `
+            <tr>
+                <td style="font-weight:bold;">${i.name}</td>
+                <td><span onclick="if(confirm('حذف الصنف نهائياً؟')){db.splice(${idx},1);save()}" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف</span></td>
+            </tr>
+        `).join('');
+    }
 
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('stockWHFilter') ? document.getElementById('stockWHFilter').value : 'ALL';
     
     let filteredStockDb = db.filter(i => !selectedStockItem ? i.name.toLowerCase().includes(stockSearchQuery) : i.name === selectedStockItem);
 
-    document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
-        let totalPieces = 0;
-        let itemTotalWeight = 0;
-        let piecesDetail = '';
-        let weightsDetail = '';
+    if(document.getElementById('stockBody')) {
+        document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
+            let totalPieces = 0;
+            let itemTotalWeight = 0;
+            let piecesDetail = '';
+            let weightsDetail = '';
 
-        if(selectedWHFilter === 'ALL') {
-            totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
-            itemTotalWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
-            piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div>📍 ${n}: <b>${v} ق</b></div>` : '').join('');
-            weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
-        } else {
-            totalPieces = i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0;
-            itemTotalWeight = i.weights && i.weights[selectedWHFilter] ? i.weights[selectedWHFilter] : 0;
-            if(totalPieces !== 0) piecesDetail = `<div>📍 ${selectedWHFilter}: <b>${totalPieces} ق</b></div>`;
-            if(itemTotalWeight !== 0) weightsDetail = `<div style="color:var(--asfour-yellow);">⚖️ ${selectedWHFilter}: <b>${itemTotalWeight.toFixed(1)} كج</b></div>`;
-        }
-        
-        return `<tr><td style="font-weight:bold; color:#3498db;">${i.name}</td><td>${piecesDetail || '-'}</td><td>${weightsDetail || '-'}</td><td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td></tr>`;
-    }).join('');
+            if(selectedWHFilter === 'ALL') {
+                totalPieces = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+                itemTotalWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+                piecesDetail = Object.entries(i.stocks || {}).map(([n, v]) => v !== 0 ? `<div>📍 ${n}: <b>${v} ق</b></div>` : '').join('');
+                weightsDetail = Object.entries(i.weights || {}).map(([n, w]) => w !== 0 ? `<div style="color:var(--asfour-yellow);">⚖️ ${n}: <b>${w.toFixed(1)} كج</b></div>` : '').join('');
+            } else {
+                totalPieces = i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0;
+                itemTotalWeight = i.weights && i.weights[selectedWHFilter] ? i.weights[selectedWHFilter] : 0;
+                if(totalPieces !== 0) piecesDetail = `<div>📍 ${selectedWHFilter}: <b>${totalPieces} ق</b></div>`;
+                if(itemTotalWeight !== 0) weightsDetail = `<div style="color:var(--asfour-yellow);">⚖️ ${selectedWHFilter}: <b>${itemTotalWeight.toFixed(1)} كج</b></div>`;
+            }
+            
+            return `<tr><td style="font-weight:bold; color:#3498db;">${i.name}</td><td>${piecesDetail || '-'}</td><td>${weightsDetail || '-'}</td><td><b>${totalPieces} ق</b><br><small style="color:var(--asfour-yellow);">${itemTotalWeight.toFixed(1)} كج</small></td></tr>`;
+        }).join('');
+    }
 
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
     let filteredRes = reservations.filter(r => !resQuery || (r.customer && r.customer.toLowerCase().includes(resQuery)) || (r.name && r.name.toLowerCase().includes(resQuery)));
 
-    document.getElementById('resBody').innerHTML = filteredRes.map((r, idx) => `
-        <tr>
-            <td><span style="font-weight:bold; color:var(--asfour-yellow);">${r.customer || 'بدون اسم'}</span><br><small style="color:var(--text-muted); font-size:10px;">📅 ${r.date || ''}</small></td>
-            <td><span style="font-weight:600;">${r.name}</span>${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}</td>
-            <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
-            <td>
-                <span onclick="editReservation(${idx})" style="cursor:pointer; color:var(--asfour-yellow); font-weight:bold; margin-left:12px;">📝 تعديل</span>
-                <span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ إلغاء</span>
-            </td>
-        </tr>
-    `).join('');
+    if(document.getElementById('resBody')) {
+        document.getElementById('resBody').innerHTML = filteredRes.map((r, idx) => `
+            <tr>
+                <td><span style="font-weight:bold; color:var(--asfour-yellow);">${r.customer || 'بدون اسم'}</span><br><small style="color:var(--text-muted); font-size:10px;">📅 ${r.date || ''}</small></td>
+                <td><span style="font-weight:600;">${r.name}</span>${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}</td>
+                <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
+                <td>
+                    <span onclick="editReservation(${idx})" style="cursor:pointer; color:var(--asfour-yellow); font-weight:bold; margin-left:12px;">📝 تعديل</span>
+                    <span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ إلغاء</span>
+                </td>
+            </tr>
+        `).join('');
+    }
     
     const customerQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
     let filteredLogs = logs.filter(l => !customerQuery || (l.sender && l.sender.toLowerCase().includes(customerQuery)) || (l.name && l.name.toLowerCase().includes(customerQuery)));
 
-    document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
-        <tr><td>${l.date}</td><td style="color:${l.type==='داخل'?'lightgreen':(l.type==='خارج'?'coral':'#3498db')}">${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td>${l.weight.toFixed(1)}</td><td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td><td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td></tr>
-    `).join('');
+    if(document.getElementById('logsBody')) {
+        document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
+            <tr><td>${l.date}</td><td style="color:${l.type==='داخل'?'lightgreen':(l.type==='خارج'?'coral':'#3498db')}">${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td>${l.weight.toFixed(1)}</td><td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td><td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️</span></td></tr>
+        `).join('');
+    }
         
     renderInventory();
 }
@@ -722,32 +810,34 @@ function renderInventory() {
 
     let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0;
 
-    document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
-        let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
-        let itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
-        let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
-        
-        let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
-        let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
+    if(document.getElementById('invBody')) {
+        document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
+            let totalQty = Object.values(i.stocks || {}).reduce((a, b) => a + b, 0);
+            let itemWeight = Object.values(i.weights || {}).reduce((a, b) => a + b, 0);
+            let itemRes = reservations.filter(r => r.name === i.name).reduce((sum, curr) => sum + curr.qty, 0);
+            
+            let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل').reduce((sum, curr) => sum + curr.qty, 0);
+            let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج').reduce((sum, curr) => sum + curr.qty, 0);
 
-        currentFilteredQty += (totalQty + itemRes); 
-        currentFilteredRes += itemRes; 
-        currentFilteredWeight += itemWeight;
+            currentFilteredQty += (totalQty + itemRes); 
+            currentFilteredRes += itemRes; 
+            currentFilteredWeight += itemWeight;
 
-        return `
-            <tr>
-                <td style="font-weight:bold; color:#3498db;">${i.name}</td>
-                <td style="color: lightgreen;">📥 ${totalInFromLogs} ق</td>
-                <td style="color: coral;">📤 ${totalOutFromLogs} ق</td>
-                <td>${totalQty + itemRes} ق</td>
-                <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
-                <td>
-                    <span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</span>
-                </td>
-            </tr>`;
-    }).join('');
+            return `
+                <tr>
+                    <td style="font-weight:bold; color:#3498db;">${i.name}</td>
+                    <td style="color: lightgreen;">📥 ${totalInFromLogs} ق</td>
+                    <td style="color: coral;">📤 ${totalOutFromLogs} ق</td>
+                    <td>${totalQty + itemRes} ق</td>
+                    <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
+                    <td>
+                        <span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل</span>
+                    </td>
+                </tr>`;
+        }).join('');
+    }
     
-    document.getElementById('grandTotalQty').innerText = currentFilteredQty + " قطعة";
-    document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
-    document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
+    if(document.getElementById('grandTotalQty')) document.getElementById('grandTotalQty').innerText = currentFilteredQty + " قطعة";
+    if(document.getElementById('grandTotalRes')) document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
+    if(document.getElementById('grandTotalWeight')) document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
 }
