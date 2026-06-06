@@ -896,7 +896,7 @@ function renderInventory() {
     const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
     let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
 
-    let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0;
+    let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0, currentFilteredNet = 0;
 
     if(document.getElementById('invBody')) {
         document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
@@ -919,6 +919,7 @@ function renderInventory() {
             currentFilteredQty += (totalQty + itemRes); 
             currentFilteredRes += itemRes; 
             currentFilteredWeight += itemWeight;
+            currentFilteredNet += totalQty;
 
             return `
                 <tr>
@@ -936,5 +937,6 @@ function renderInventory() {
     
     if(document.getElementById('grandTotalQty')) document.getElementById('grandTotalQty').innerText = currentFilteredQty + " قطعة";
     if(document.getElementById('grandTotalRes')) document.getElementById('grandTotalRes').innerText = currentFilteredRes + " قطعة";
+    if(document.getElementById('grandTotalNet')) document.getElementById('grandTotalNet').innerText = currentFilteredNet + " قطعة";
     if(document.getElementById('grandTotalWeight')) document.getElementById('grandTotalWeight').innerText = currentFilteredWeight.toFixed(1) + " كجم";
 }
