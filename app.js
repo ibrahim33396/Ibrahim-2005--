@@ -1,4 +1,4 @@
-// إعدادات Firebase الخاصة بالمشروع (إبراهيم)
+// إعدادات الـ Firebase الخاصة بالمشروع (إبراهيم)
 const firebaseConfig = {
   apiKey: "AIzaSyDlv0ygMBeIVLQo2AzDIrHzGb_AeDDh-q0",
   authDomain: "ibrahim-f988d.firebaseapp.com",
@@ -18,14 +18,15 @@ let whs = ["المخزن الرئيسي"];
 let logs = [];
 let reservations = [];
 let users = { "admin": { pass: "000", role: "admin" } }; 
+let appLogoBase64 = ""; 
 let tempInvoice = { in: [], out: [] };
 
 let selectedStockItem = null;
 let selectedInventoryItem = null;
+let selectedLogItem = null; 
 let currentDropdownFocusIndex = -1;
 let currentLoggedUser = ""; 
 
-// تهيئة وإعداد الثيم عند تحميل الصفحة
 (function initTheme() {
     const savedTheme = localStorage.getItem('asfour-theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -38,19 +39,49 @@ function toggleTheme() {
     localStorage.setItem('asfour-theme', newTheme);
 }
 
-// دالة فحص الصلاحية: هل المستخدم الحالي يمتلك صلاحية أدمن؟
 function isAdmin() {
     if (!users[currentLoggedUser]) return false;
     return users[currentLoggedUser].role === 'admin' || currentLoggedUser.toLowerCase() === 'admin';
 }
 
-// دالة تسجيل الدخول متعدد المستخدمين
+// هندسة الكيبورد الفائقة لشاشة تسجيل الدخول النشطة
+const loginFields = [document.getElementById('adminUser'), document.getElementById('adminPass'), document.getElementById('loginSubmitBtn')];
+
+loginFields.forEach((field, index) => {
+    if(!field) return;
+    field.addEventListener('keydown', function(e) {
+        // نضمن عمل هذه الاختصارات داخل صفحة الـ Login فقط لمنع التداخل
+        if (document.getElementById('login-screen').style.display === 'none') return;
+
+        if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            // عند الضغط على Enter في حقل الباسورد الأخير أو زر الدخول يتم تفعيل دالة الدخول مباشرة
+            if (e.key === 'Enter' && (field.id === 'adminPass' || field.id === 'loginSubmitBtn')) {
+                login();
+                return;
+            }
+            e.preventDefault();
+            let nextIdx = (index + 1) % loginFields.length;
+            loginFields[nextIdx].focus();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let prevIdx = (index - 1 + loginFields.length) % loginFields.length;
+            loginFields[prevIdx].focus();
+        }
+    });
+});
+
+// تشغيل الفوكس تلقائياً فور فتح صفحة تسجيل الدخول
+window.addEventListener('DOMContentLoaded', () => {
+    if(document.getElementById('adminUser')) {
+        document.getElementById('adminUser').focus();
+    }
+});
+
 function login() {
     const userInput = document.getElementById('adminUser').value.trim();
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
     
-    // التحقق من هيكلية الحساب القديمة والجديدة لضمان التوافقية
     let userAccount = users[userInput];
     let isValid = false;
     
@@ -58,7 +89,6 @@ function login() {
         if (typeof userAccount === 'object' && userAccount.pass === passInput) {
             isValid = true;
         } else if (typeof userAccount === 'string' && userAccount === passInput) {
-            // تحويل تلقائي للهيكلية الجديدة في حال كانت مخزنة كنص فقط
             users[userInput] = { pass: passInput, role: userInput.toLowerCase() === 'admin' ? 'admin' : 'employee' };
             isValid = true;
         }
@@ -70,7 +100,6 @@ function login() {
         document.getElementById('main-app').style.display = 'block';
         document.getElementById('currentUserLabel').innerText = `👤 المستخدِم: ${userInput}`;
         
-        // إظهار تبويب الإعدادات فقط وحصرياً إذا كان الحساب يمتلك صلاحية المشرف الأعلى
         const setupTab = document.getElementById('setupTabBtn');
         const roleLabel = document.getElementById('roleLabel');
         if (isAdmin()) {
@@ -95,7 +124,6 @@ function login() {
     }
 }
 
-// الاستماع المباشر للتغييرات في Firebase
 dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -103,14 +131,16 @@ dbRef.on('value', (snapshot) => {
         whs = data.warehouses || ["المخزن الرئيسي"];
         logs = data.logs || [];
         reservations = data.reservations || [];
-        
-        // جلب الحسابات وضمان بقاء الحساب الرئيسي
+        appLogoBase64 = data.appLogoBase64 || ""; 
         users = data.users || { "admin": { pass: "000", role: "admin" } }; 
+        
         if(!users["admin"]) {
             users["admin"] = { pass: "000", role: "admin" };
         }
         
-        updateWHDropdownFilter();
+        updateWHDropdowns();
+        displayUploadedLogo(); 
+        
         if (document.getElementById('main-app').style.display === 'block') {
             renderData(); 
         }
@@ -119,12 +149,12 @@ dbRef.on('value', (snapshot) => {
     }
 });
 
-function updateWHDropdownFilter() {
-    ['stockWHFilter', 'invWHFilter'].forEach(id => {
+function updateWHDropdowns() {
+    ['stockWHFilter', 'invWHFilter', 'filterLogWH'].forEach(id => {
         const el = document.getElementById(id);
         if(el) {
             const currentVal = el.value;
-            let options = '<option value="ALL">🌍 كل المستودعات</option>';
+            let options = id === 'filterLogWH' ? '<option value="ALL">🔽 كل المستودعات</option>' : '<option value="ALL">🌍 كل المستودعات</option>';
             whs.forEach(w => { options += `<option value="${w}">📍 ${w}</option>`; });
             el.innerHTML = options;
             el.value = currentVal;
@@ -139,8 +169,35 @@ function save() {
         warehouses: whs,
         logs: logs,
         reservations: reservations,
-        users: users
+        users: users,
+        appLogoBase64: appLogoBase64
     });
+}
+
+function uploadLogoToServer() {
+    if(!isAdmin()) return alert("🚨 عذراً، رفع وتحديث الشعار صلاحية تابعة للمدير فقط.");
+    const file = document.getElementById('logoInput').files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = function() {
+        appLogoBase64 = reader.result; 
+        save(); 
+        alert("✅ تم رفع وحفظ الشعار الرسمي الجديد في قاعدة البيانات بنجاح!");
+    };
+    reader.readAsDataURL(file);
+}
+
+function displayUploadedLogo() {
+    const logoImg = document.getElementById('headerLogo');
+    if(logoImg) {
+        if(appLogoBase64) {
+            logoImg.src = appLogoBase64;
+            logoImg.style.display = 'block';
+        } else {
+            logoImg.style.display = 'none';
+        }
+    }
 }
 
 function setDefaultDates() {
@@ -159,7 +216,6 @@ function kbNav(e, nextId) {
     } 
 }
 
-// التنقل بالأسهم للتبويبات
 document.addEventListener('keydown', function(e) {
     if (document.getElementById('main-app').style.display !== 'block') return;
     if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return; 
@@ -238,12 +294,13 @@ function switchTab(id, btn) {
     
     selectedStockItem = null;
     selectedInventoryItem = null;
+    selectedLogItem = null; 
     document.getElementById('editResIndex').value = "-1";
     if(document.getElementById('btn_SUBMIT_RES')) document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
     
     if(document.getElementById('stockSearch')) document.getElementById('stockSearch').value = '';
     if(document.getElementById('invSearch')) document.getElementById('invSearch').value = '';
-    if(document.getElementById('logCustomerSearch')) document.getElementById('logCustomerSearch').value = '';
+    if(document.getElementById('logItemSearch')) document.getElementById('logItemSearch').value = '';
 
     closeAllDropdowns();
     renderData();
@@ -286,24 +343,19 @@ function showGlobalSearchDropdown(view) {
     let dropdownId = view + 'Dropdown', inputId = view + 'Search';
     
     if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
-    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    if(view === 'logGlobal') { dropdownId = 'logSearchDropdown'; inputId = 'logItemSearch'; }
     
     const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
     const inputVal = document.getElementById(inputId).value.toLowerCase();
     
     let listItems = [];
-    if(view === 'stock' || view === 'inv') {
+    if(view === 'stock' || view === 'inv' || view === 'logGlobal') {
         listItems = db.map(i => i.name);
     } else if(view === 'res') {
         let uniqueCustomers = [...new Set(reservations.map(r => r.customer).filter(Boolean))];
         let uniqueItems = [...new Set(reservations.map(r => r.name).filter(Boolean))];
         listItems = [...uniqueCustomers, ...uniqueItems];
-    } else if(view === 'log') {
-        let senders = logs.map(l => l.sender).filter(Boolean);
-        let items = logs.map(l => l.name).filter(Boolean);
-        let warehouses = logs.map(l => l.wh).filter(Boolean);
-        let types = logs.map(l => l.type).filter(Boolean);
-        listItems = [...new Set([...senders, ...items, ...warehouses, ...types])];
     }
 
     let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
@@ -320,24 +372,19 @@ function filterGlobalSearch(view) {
     let dropdownId = view + 'Dropdown', inputId = view + 'Search';
     
     if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
-    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    if(view === 'logGlobal') { dropdownId = 'logSearchDropdown'; inputId = 'logItemSearch'; }
     
     const dropdown = document.getElementById(dropdownId);
+    if (!dropdown) return;
     const inputVal = document.getElementById(inputId).value.toLowerCase();
     
     let listItems = [];
-    if(view === 'stock' || view === 'inv') {
+    if(view === 'stock' || view === 'inv' || view === 'logGlobal') {
         listItems = db.map(i => i.name);
     } else if(view === 'res') {
         let uniqueCustomers = [...new Set(reservations.map(r => r.customer).filter(Boolean))];
         let uniqueItems = [...new Set(reservations.map(r => r.name).filter(Boolean))];
         listItems = [...uniqueCustomers, ...uniqueItems];
-    } else if(view === 'log') {
-        let senders = logs.map(l => l.sender).filter(Boolean);
-        let items = logs.map(l => l.name).filter(Boolean);
-        let warehouses = logs.map(l => l.wh).filter(Boolean);
-        let types = logs.map(l => l.type).filter(Boolean);
-        listItems = [...new Set([...senders, ...items, ...warehouses, ...types])];
     }
 
     let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
@@ -354,6 +401,7 @@ function filterGlobalSearch(view) {
     if(!inputVal) {
         if(view === 'stock') selectedStockItem = null;
         if(view === 'inv') selectedInventoryItem = null;
+        if(view === 'logGlobal') selectedLogItem = null;
     }
     renderData();
 }
@@ -361,7 +409,7 @@ function filterGlobalSearch(view) {
 function selectGlobalSearchItem(view, value) {
     let dropdownId = view + 'Dropdown', inputId = view + 'Search';
     if(view === 'res') { dropdownId = 'resSearchDropdown'; inputId = 'resSearchQuery'; }
-    if(view === 'log') { dropdownId = 'logSearchDropdown'; inputId = 'logCustomerSearch'; }
+    if(view === 'logGlobal') { dropdownId = 'logSearchDropdown'; inputId = 'logItemSearch'; }
     
     document.getElementById(inputId).value = value;
     document.getElementById(dropdownId).style.display = 'none';
@@ -369,6 +417,7 @@ function selectGlobalSearchItem(view, value) {
     
     if(view === 'stock') selectedStockItem = value;
     if(view === 'inv') selectedInventoryItem = value;
+    if(view === 'logGlobal') selectedLogItem = value; 
     
     renderData();
 }
@@ -385,7 +434,7 @@ document.addEventListener('click', function(e) {
 function selectDropdownItem(type, value) {
     document.getElementById(type + 'NameSearch').value = value;
     document.getElementById(type + 'Name').value = value;
-    document.getElementById(type + 'Dropdown').style.display = 'none';
+    document.getElementById(type+'Dropdown').style.display = 'none';
     currentDropdownFocusIndex = -1;
     if(document.getElementById(type + 'Qty')) document.getElementById(type + 'Qty').focus();
 }
@@ -408,7 +457,6 @@ function addNewWH() {
     save();
 }
 
-// إضافة وإدارة المستخدمين مع الصلاحيات البرمجية المتكاملة
 function addNewUser() {
     if(!isAdmin()) return alert("🚨 حماية النظام: لا يمكن للموظفين إضافة حسابات جديدة.");
     const user = document.getElementById('newUserName').value.trim();
@@ -425,50 +473,44 @@ function addNewUser() {
     document.getElementById('newUserName').value = '';
     document.getElementById('newUserPass').value = '';
     save();
-    alert(`✅ تم حفظ حساب [ ${user} ] بنجاح برتبة [ ${role === 'admin' ? 'مدير نظام' : 'موظف'} ]!`);
+    alert(`✅ تم حفظ حساب [ ${user} ] بنجاح!`);
 }
 
-// الميزة المطلوبة: دالة برمجية متكاملة لتعديل اسم وصلاحية المستخدم الحالي من الجدول سحابياً
 function editUserFields(oldUser) {
     if(!isAdmin()) return alert("🚨 غير مصرح لك بتعديل بيانات الحسابات.");
     if (oldUser.toLowerCase() === 'admin') {
-        return alert("🚨 لا يمكن تعديل اسم حساب admin الأساسي للنظام لدواعي الأمان المتقدمة.");
+        return alert("🚨 لا يمكن تعديل اسم حساب admin الأساسي للنظام لدواعي الأمان.");
     }
     
     const currentAcc = users[oldUser];
     const currentPass = typeof currentAcc === 'object' ? currentAcc.pass : currentAcc;
     const currentRole = typeof currentAcc === 'object' ? (currentAcc.role || 'employee') : 'employee';
 
-    const newUserName = prompt(`تعديل اسم الحساب الحالي [ ${oldUser} ] إلى الاسم الجديد:`, oldUser);
+    const newUserName = prompt(`تعديل اسم الحساب الحالي [ ${oldUser} ] إلى:`, oldUser);
     if (!newUserName || newUserName.trim() === "") return;
     
     if (newUserName.trim() !== oldUser && users[newUserName.trim()]) {
-        return alert("🚨 خطأ: اسم المستخدم الجديد مستخدم بالفعل لحساب آخر.");
+        return alert("🚨 خطأ: اسم المستخدم الجديد مستخدم بالفعل.");
     }
 
-    const newRoleInput = prompt(`تعديل رتبة وصلاحيات الحساب.\nاكتب (1) لجعله: مدير نظام\nاكتب (2) لجعله: موظف مخازن\nالرتبة الحالية هي: ${currentRole === 'admin' ? 'مدير نظام' : 'موظف'}`, currentRole === 'admin' ? '1' : '2');
+    const newRoleInput = prompt(`تعديل الصلاحيات:\nاكتب (1) لجعله: مدير نظام\nاكتب (2) لجعله: موظف`, currentRole === 'admin' ? '1' : '2');
     if (!newRoleInput) return;
 
     let targetRole = 'employee';
     if (newRoleInput.trim() === '1') targetRole = 'admin';
 
-    // حذف القديم وبناء البنية البرمجية الجديدة لحفظ التعديلات سحابياً
     delete users[oldUser];
-    users[newUserName.trim()] = {
-        pass: currentPass,
-        role: targetRole
-    };
-
+    users[newUserName.trim()] = { pass: currentPass, role: targetRole };
     save();
-    alert(`✅ تم تعديل بيانات الحساب من [${oldUser}] إلى [${newUserName.trim()}] بنجاح!`);
+    alert(`✅ تم تعديل بيانات الحساب بنجاح!`);
 }
 
 function removeUser(user) {
     if(!isAdmin()) return alert("🚨 غير مصرح لك.");
     if (user.toLowerCase() === 'admin') {
-        return alert("🚨 خطأ أمني: لا يمكن حذف حساب المدير الرئيسي للنظام بأي شكل كان.");
+        return alert("🚨 خطأ أمني: لا يمكن حذف حساب المدير الرئيسي.");
     }
-    if(confirm(`هل تريد حذف حساب الموظف [ ${user} ] نهائياً من السيستم؟`)) {
+    if(confirm(`هل تريد حذف حساب الموظف [ ${user} ] نهائياً؟`)) {
         delete users[user];
         save();
         alert("تم الحذف.");
@@ -518,9 +560,7 @@ function removeWH(whName) {
 }
 
 function quickEditItem(itemName) {
-    if(!isAdmin()) {
-        return alert("🚨 الإجراء مرفوض: الموظف لا يملك صلاحية التعديل اليدوي المباشر للأرصدة.");
-    }
+    if(!isAdmin()) return alert("🚨 الإجراء مرفوض للموظفين.");
     const item = db.find(i => i.name === itemName);
     if (!item) return;
 
@@ -533,10 +573,10 @@ function quickEditItem(itemName) {
     let currentQty = item.stocks[targetWH] || 0;
     let currentWeight = item.weights[targetWH] || 0;
 
-    let newQtyInput = prompt(`تعديل رصيد [ ${itemName} ] في [ ${targetWH} ]:\nالكمية الحالية هي (${currentQty} قطعة).\nأدخل الكمية الجديدة المطلوبة:`, currentQty);
+    let newQtyInput = prompt(`تعديل رصيد [ ${itemName} ] في [ ${targetWH} ]:\nالكمية الحالية هي (${currentQty} قطعة).\nأدخل الكمية الجديدة:`, currentQty);
     if (newQtyInput === null) return; 
     
-    let newWeightInput = prompt(`أدخل الوزن الإجمالي الجديد بالـ (كجم) لنفس الصنف:\nالوزن الحالي هو (${currentWeight} كجم):`, currentWeight);
+    let newWeightInput = prompt(`أدخل الوزن الإجمالي الجديد بالـ (كجم):\nالوزن الحالي هو (${currentWeight} كجم):`, currentWeight);
     if (newWeightInput === null) return; 
 
     let newQty = parseInt(newQtyInput);
@@ -634,7 +674,7 @@ function saveFinalInvoice(type) {
             const item = db.find(i => i.name === invItem.name);
             let currentStock = item && item.stocks && item.stocks[invItem.wh] ? item.stocks[invItem.wh] : 0;
             if (currentStock < invItem.qty) {
-                alert(`🚨 خطأ في الترحيل!\n[ ${invItem.name} ] الرصيد الحالي بالمخزن [ ${invItem.wh} ] هو (${currentStock}) فقط.`);
+                alert(`🚨 خطأ في الترحيل!\n[ ${invItem.name} ] الرصيد الحالي بالمخزن هو (${currentStock}) فقط.`);
                 hasError = true;
             }
         });
@@ -661,7 +701,7 @@ function saveFinalInvoice(type) {
     renderInvoice(type);
     save();
     setDefaultDates();
-    alert("تم ترحيل الفاتورة وحفظها سحابياً!");
+    alert("تم ترحيل الفاتورة بنجاح!");
 }
 
 function addReservation() {
@@ -711,7 +751,6 @@ function addReservation() {
     ['resNameSearch', 'resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
     alert("✅ تم الحفظ بنجاح!");
-    if(document.getElementById('resNameSearch')) document.getElementById('resNameSearch').focus();
 }
 
 function editReservation(idx) {
@@ -736,7 +775,6 @@ function editReservation(idx) {
         document.getElementById('resNotes').value = res.notes || '';
         document.getElementById('editResIndex').value = actualIndex;
         document.getElementById('btn_SUBMIT_RES').innerText = "📝 حفظ التعديل";
-        document.getElementById('resQty').focus();
     }
 }
 
@@ -770,17 +808,19 @@ function removeReservation(idx) {
 
 function deleteLogItem(idx) {
     if(!isAdmin()) return alert("🚨 هذه الصلاحية تابعة للمدير فقط.");
-    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً من الأرشيف؟")) {
-        const searchQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
-        let filteredLogs = logs;
-        if(searchQuery) {
-            filteredLogs = logs.filter(l => 
-                (l.sender && l.sender.toLowerCase().includes(searchQuery)) ||
-                (l.name && l.name.toLowerCase().includes(searchQuery)) ||
-                (l.wh && l.wh.toLowerCase().includes(searchQuery)) ||
-                (l.type && l.type.toLowerCase().includes(searchQuery))
-            );
-        }
+    if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً؟")) {
+        const typeF = document.getElementById('filterLogType').value;
+        const whF = document.getElementById('filterLogWH').value;
+        const senderF = document.getElementById('filterLogSender').value.toLowerCase();
+
+        let filteredLogs = logs.filter(l => {
+            if(typeF !== 'ALL' && l.type !== typeF) return false;
+            if(whF !== 'ALL' && l.wh !== whF) return false;
+            if(selectedLogItem && l.name !== selectedLogItem) return false; 
+            if(senderF && !l.sender.toLowerCase().includes(senderF)) return false;
+            return true;
+        });
+
         const actualItem = filteredLogs[idx];
         const actualIndexInMainLogs = logs.indexOf(actualItem);
         
@@ -836,12 +876,21 @@ function exportAvailableToExcel() {
 }
 
 function exportToExcel() {
-    const searchQuery = document.getElementById('logCustomerSearch').value.toLowerCase();
-    let logsToExport = logs.filter(l => !searchQuery || (l.sender && l.sender.toLowerCase().includes(searchQuery)) || (l.name && l.name.toLowerCase().includes(searchQuery)) || (l.wh && l.wh.toLowerCase().includes(searchQuery)) || (l.type && l.type.toLowerCase().includes(searchQuery)));
+    const typeF = document.getElementById('filterLogType').value;
+    const whF = document.getElementById('filterLogWH').value;
+    const senderF = document.getElementById('filterLogSender').value.toLowerCase();
+
+    let logsToExport = logs.filter(l => {
+        if(typeF !== 'ALL' && l.type !== typeF) return false;
+        if(whF !== 'ALL' && l.wh !== whF) return false;
+        if(selectedLogItem && l.name !== selectedLogItem) return false; 
+        if(senderF && !l.sender.toLowerCase().includes(senderF)) return false;
+        return true;
+    });
 
     let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة/الزبون;ملاحظات\n";
     logsToExport.forEach(l => { csv += `${l.date};${l.type};${l.name};${l.qty};${l.wh};${l.weight};${l.sender};${(l.notes||"")}\n`; });
-    downloadCSV(csv, "أرشيف_الحركات");
+    downloadCSV(csv, "أرشيف_الحركات_المفلترة");
 }
 
 function downloadCSV(content, fileName) {
@@ -884,7 +933,6 @@ function renderData() {
         `).join('');
     }
 
-    // بناء جدول وإدارة الحسابات سحابياً مع تفعيل إمكانية الضغط للتعديل على الرتبة والاسم
     if(document.getElementById('manageUsersBody')) {
         document.getElementById('manageUsersBody').innerHTML = Object.keys(users).map((user) => {
             const acc = users[user];
@@ -895,12 +943,8 @@ function renderData() {
             <tr>
                 <td style="font-weight:bold; color:var(--success);">${user}</td>
                 <td style="color:var(--asfour-accent); font-weight:bold;">${roleStr}</td>
-                <td>
-                    <span onclick="editUserFields('${user}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل البيانات</span>
-                </td>
-                <td>
-                    <span onclick="removeUser('${user}')" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف الحساب</span>
-                </td>
+                <td><span onclick="editUserFields('${user}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل البيانات</span></td>
+                <td><span onclick="removeUser('${user}')" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ حذف الحساب</span></td>
             </tr>`;
         }).join('');
     }
@@ -939,18 +983,36 @@ function renderData() {
                 <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
                 <td>
                     <span onclick="editReservation(${idx})" style="cursor:pointer; color:var(--asfour-yellow); font-weight:bold; margin-left:12px;">📝 تعديل</span>
-                    <span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ إلغاء الحجز</span>
+                    <span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ إلغاء</span>
                 </td>
             </tr>
         `).join('');
     }
     
-    const logSearchQuery = document.getElementById('logCustomerSearch') ? document.getElementById('logCustomerSearch').value.toLowerCase() : '';
-    let filteredLogs = logs.filter(l => !logSearchQuery || (l.sender && l.sender.toLowerCase().includes(logSearchQuery)) || (l.name && l.name.toLowerCase().includes(logSearchQuery)) || (l.wh && l.wh.toLowerCase().includes(logSearchQuery)) || (l.type && l.type.toLowerCase().includes(logSearchQuery)));
+    const typeFilterValue = document.getElementById('filterLogType') ? document.getElementById('filterLogType').value : 'ALL';
+    const whFilterValue = document.getElementById('filterLogWH') ? document.getElementById('filterLogWH').value : 'ALL';
+    const senderFilterValue = document.getElementById('filterLogSender') ? document.getElementById('filterLogSender').value.toLowerCase() : '';
+
+    let filteredLogs = logs.filter(l => {
+        if (typeFilterValue !== 'ALL' && l.type !== typeFilterValue) return false;
+        if (whFilterValue !== 'ALL' && l.wh !== whFilterValue) return false;
+        if (selectedLogItem && l.name !== selectedLogItem) return false; 
+        if (senderFilterValue && !l.sender.toLowerCase().includes(senderFilterValue)) return false;
+        return true;
+    });
 
     if(document.getElementById('logsBody')) {
         document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
-            <tr><td>${l.date}</td><td style="color:${l.type==='داخل'?'lightgreen':(l.type==='خارج'?'coral':'#3498db')}">${l.type}</td><td>${l.name}</td><td>${l.qty}</td><td>${l.wh}</td><td>${l.weight.toFixed(1)}</td><td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td><td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ مسح</span></td></tr>
+            <tr>
+                <td>${l.date}</td>
+                <td style="color:${l.type==='داخل'?'lightgreen':(l.type==='خارج'?'coral':'#3498db')}">${l.type}</td>
+                <td>${l.name}</td>
+                <td>${l.qty}</td>
+                <td>${l.wh}</td>
+                <td>${l.weight.toFixed(1)}</td>
+                <td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td>
+                <td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ مسح</span></td>
+            </tr>
         `).join('');
     }
     renderInventory();
@@ -984,9 +1046,7 @@ function renderInventory() {
                     <td style="color: coral;">📤 ${totalOutFromLogs} ق</td>
                     <td>${totalQty + itemRes} ق</td>
                     <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
-                    <td>
-                        <span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تصحيح رصيد مباشر</span>
-                    </td>
+                    <td><span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تصحيح رصيد مباشر</span></td>
                 </tr>`;
         }).join('');
     }

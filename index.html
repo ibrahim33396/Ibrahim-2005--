@@ -6,32 +6,31 @@
     <title>عصفور ستيل - إدارة المخازن الاحترافية</title>
     <style>
         :root {
-            /* ألوان مستوحاة من صناعة الحديد والفولاذ */
-            --asfour-dark: #1e2229;          /* رمادي حديدي داكن */
-            --asfour-panel: #282c34;         /* فولاذي مصقول */
-            --asfour-yellow: #e67e22;        /* برتقالي ناري لصهير الحديد */
-            --asfour-accent: #f1c40f;        /* ذهبي معدني */
-            --text-main: #f5f6fa;            /* أبيض فضي */
-            --text-muted: #95a5a6;           /* رمادي معدني باهت */
-            --border-color: #3f4451;         /* حدود فولاذية غامقة */
+            --asfour-dark: #1e2229;          
+            --asfour-panel: rgba(30, 33, 41, 0.65); /* زيادة الشفافية الزجاجية للخلفيات */
+            --asfour-yellow: #e67e22;        
+            --asfour-accent: #f1c40f;        
+            --text-main: #f5f6fa;            
+            --text-muted: #cdcdcd;           
+            --border-color: rgba(255, 255, 255, 0.15); /* حدود ناعمة شفافة */
             --success: #2ecc71;
             --danger: #e74c3c;
             --orange: #e67e22;
-            --input-bg: #1a1d24;
+            --input-bg: rgba(0, 0, 0, 0.55); /* حقول مدخلات شفافة بالكامل */
         }
 
         [data-theme="light"] {
             --asfour-dark: #ebedf2;
-            --asfour-panel: #ffffff;
+            --asfour-panel: rgba(255, 255, 255, 0.75);
             --asfour-yellow: #d35400;
             --asfour-accent: #f39c12;
             --text-main: #2c3e50;
             --text-muted: #7f8c8d;
-            --border-color: #bdc3c7;
+            --border-color: rgba(0, 0, 0, 0.1);
             --success: #27ae60;
             --danger: #c0392b;
             --orange: #e67e22;
-            --input-bg: #f8f9fa;
+            --input-bg: rgba(255, 255, 255, 0.6);
         }
 
         * {
@@ -43,9 +42,15 @@
         }
 
         body {
-            background-color: var(--asfour-dark);
+            /* تعديل موضع الصورة ليكون في المنتصف تماماً وإضافة مسحة صفراء دافئة متناسقة */
+            background-image: linear-gradient(rgba(230, 126, 34, 0.15), rgba(0, 0, 0, 0.75)), url('/photo_٢٠٢٦-٠٦-١١_١٨-٢٠-١٥.jpg');
+            background-size: cover;
+            background-position: center center; /* في المنتصف تماماً */
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: var(--text-main);
             padding: 10px;
+            min-height: 100vh;
         }
 
         .container {
@@ -60,6 +65,26 @@
             padding-bottom: 12px;
             border-bottom: 3px solid var(--asfour-yellow);
             margin-bottom: 15px;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-logo {
+            max-height: 50px;
+            max-width: 120px;
+            object-fit: contain;
+            border-radius: 4px;
+            display: none;
         }
 
         h1 {
@@ -70,14 +95,63 @@
         }
 
         #login-screen {
-            max-width: 360px;
-            margin: 60px auto;
-            background: var(--asfour-panel);
-            padding: 20px;
-            border-radius: 8px;
+            max-width: 380px;
+            margin: 90px auto;
+            background: rgba(25px, 28px, 34px, 0.55); /* زيادة شفافية نافذة تسجيل الدخول */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 30px 25px;
+            border-radius: 12px;
             border: 1px solid var(--border-color);
             text-align: center;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7);
+        }
+
+        #login-screen input.login-kb-field {
+            width: 100%;
+            padding: 14px;
+            background: rgba(0, 0, 0, 0.5); /* شفافية داخل الحقول */
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 15px;
+            outline: none;
+            text-align: center;
+            margin-bottom: 15px;
+            transition: all 0.2s ease;
+        }
+
+        #login-screen input.login-kb-field:focus {
+            border-color: var(--asfour-yellow);
+            background: rgba(0, 0, 0, 0.75);
+            box-shadow: 0 0 10px rgba(230, 126, 34, 0.4);
+        }
+
+        /* جعل أزرار المنظومة أكثر شفافية واحترافية */
+        .btn-login-submit, button.btn-primary, button.btn-action, .tab-btn {
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            transition: all 0.2s ease;
+        }
+
+        #login-screen .btn-login-submit {
+            width: 100%;
+            padding: 14px;
+            background: rgba(230, 126, 34, 0.45); /* زر تسجيل دخول شفاف */
+            color: #fff;
+            font-weight: bold;
+            font-size: 15px;
+            border: 2px solid rgba(230, 126, 34, 0.6);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #login-screen .btn-login-submit:focus, #login-screen .btn-login-submit:hover {
+            background: var(--asfour-yellow);
+            color: #fff;
+            border-color: var(--asfour-yellow);
+            outline: none;
+            box-shadow: 0 0 12px rgba(230, 126, 34, 0.6);
         }
 
         .tabs {
@@ -99,7 +173,7 @@
         }
 
         .tab-btn {
-            background: var(--asfour-panel);
+            background: rgba(0, 0, 0, 0.35); /* أزرار التبويبات العلوية شفافة */
             color: var(--text-main);
             border: 1px solid var(--border-color);
             padding: 10px 16px;
@@ -111,7 +185,7 @@
         }
 
         .tab-btn.active, .tab-btn:focus, .tab-btn:hover {
-            background: var(--asfour-yellow);
+            background: rgba(230, 126, 34, 0.75);
             color: #fff;
             border-color: var(--asfour-yellow);
             outline: none;
@@ -119,11 +193,13 @@
 
         .tab-content {
             background: var(--asfour-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 15px;
             border-radius: 8px;
             border: 1px solid var(--border-color);
             display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
         }
 
         .form-group {
@@ -131,6 +207,18 @@
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
             gap: 12px;
             margin-bottom: 15px;
+            align-items: end;
+        }
+
+        .excel-filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            background: var(--input-bg);
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
             align-items: end;
         }
 
@@ -171,7 +259,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: var(--asfour-panel);
+            background: rgba(30, 34, 42, 0.95);
             border: 1px solid var(--asfour-yellow);
             border-radius: 5px;
             max-height: 220px;
@@ -186,7 +274,7 @@
             cursor: pointer;
             border-bottom: 1px solid var(--border-color);
             font-size: 14px;
-            color: var(--text-main);
+            color: #f5f6fa;
         }
 
         .custom-dropdown-item:hover, .custom-dropdown-item.focused {
@@ -196,23 +284,28 @@
         }
 
         button.btn-primary {
-            background: var(--asfour-yellow);
+            background: rgba(230, 126, 34, 0.5); /* أزرار الإجراءات شفافة */
+            border: 1px solid var(--asfour-yellow);
             color: #fff;
             font-weight: bold;
             cursor: pointer;
-            border: none;
         }
 
-        button.btn-primary:focus {
-            outline: 2px solid var(--text-main);
+        button.btn-primary:focus, button.btn-primary:hover {
+            background: var(--asfour-yellow);
+            outline: none;
         }
 
         button.btn-action {
-            background: var(--orange);
+            background: rgba(46, 204, 113, 0.45); /* زر الحفظ شفاف */
+            border: 1px solid var(--success);
             color: white;
             font-weight: bold;
             cursor: pointer;
-            border: none;
+        }
+        
+        button.btn-action:hover {
+            background: var(--success);
         }
 
         .table-container {
@@ -234,13 +327,13 @@
         }
 
         th {
-            background: var(--input-bg);
+            background: rgba(0, 0, 0, 0.4);
             color: var(--asfour-accent);
             border-bottom: 2px solid var(--border-color);
         }
 
         tr:hover {
-            background: var(--input-bg);
+            background: rgba(255, 255, 255, 0.05);
         }
 
         .stats-grid {
@@ -304,7 +397,7 @@
             h1 { font-size: 18px; }
             .tab-content { padding: 10px; }
             th, td { padding: 8px 5px; font-size: 12px; }
-            .form-group { grid-template-columns: 1fr 1fr; }
+            .form-group, .excel-filter-grid { grid-template-columns: 1fr 1fr; }
             .form-group button { grid-column: span 2; }
             .searchable-select-container { grid-column: span 2; }
         }
@@ -315,17 +408,18 @@
 <div class="container">
 
     <div id="login-screen">
-        <h2 style="color: var(--asfour-yellow); margin-bottom: 15px; font-size: 18px;">🔒 دخول عصفور ستيل</h2>
-        <input type="text" id="adminUser" placeholder="اسم المستخدم" style="text-align: center; margin-bottom: 12px;">
-        <input type="password" id="adminPass" placeholder="الرمز السرّي" style="text-align: center; margin-bottom: 12px;" onkeydown="if(event.key==='Enter') login()">
-        <button class="btn-primary" onclick="login()">دخول ومزامنة</button>
+        <h2 style="color: var(--asfour-yellow); margin-bottom: 20px; font-size: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5);">🔒 دخول عصفور ستيل</h2>
+        <input type="text" id="adminUser" class="login-kb-field" placeholder="اسم المستخدم" autocomplete="off">
+        <input type="password" id="adminPass" class="login-kb-field" placeholder="الرمز السرّي" autocomplete="off">
+        <button id="loginSubmitBtn" class="btn-login-submit" onclick="login()">دخول ومزامنة (Enter)</button>
         <p id="loginError" class="error-msg">❌ البيانات غير صحيحة</p>
     </div>
 
     <div id="main-app" style="display: none;">
         <header>
-            <div style="display: flex; align-items: center; gap: 15px;">
-                <h1>ASFOUR STEEL</h1>
+            <div class="logo-area">
+                <img id="headerLogo" src="" alt="الشعار" class="app-logo">
+                <h1>ASFUR STEEL</h1>
                 <button onclick="toggleTheme()" class="theme-toggle-btn" id="themeIcon" title="تغيير الثيم">🌓</button>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
@@ -406,7 +500,7 @@
                         </select>
                     </div>
                 </div>
-                <button class="btn-primary" onclick="exportAvailableToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px; background-color: #1F497D; color: white; border: none;">📥 تصدير المتاح (Excel)</button>
+                <button class="btn-primary" onclick="exportAvailableToExcel()" style="width: auto; padding: 8px 12px; font-size: 12px;">📥 تصدير المتاح (Excel)</button>
             </div>
             <div class="table-container">
                 <table id="invTable">
@@ -468,7 +562,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px; background: var(--success);" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة سحابياً</button>
+            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة سحابياً</button>
         </div>
 
         <div id="out-view" class="tab-content">
@@ -514,7 +608,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة سحابياً</button>
+            <button class="btn-action" style="margin-top: 15px; background: rgba(230, 126, 34, 0.5); border-color: var(--orange);" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة سحابياً</button>
         </div>
 
         <div id="res-view" class="tab-content">
@@ -564,15 +658,37 @@
 
         <div id="logs-view" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; max-width: 400px;">
-                    <h2 style="font-size: 16px; white-space: nowrap;">📜 الأرشيف</h2>
-                    <div class="searchable-select-container" style="flex: 1;">
-                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث في كامل الأرشيف..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" onkeydown="handleDropdownNavigation(event, 'logGlobal')" autocomplete="off">
-                        <div id="logSearchDropdown" class="custom-dropdown-list"></div>
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 10px; font-size: 12px;">📥 تصدير كشف Excel</button>
+                <h2 style="font-size: 16px;">📜 الأرشيف العام والفلاتر المتقدمة</h2>
+                <button class="btn-primary" onclick="exportToExcel()" style="width: auto; padding: 6px 14px; font-size: 12px;">📥 تصدير كشف Excel</button>
             </div>
+
+            <div class="excel-filter-grid">
+                <div>
+                    <label>تصفية بحسب النوع</label>
+                    <select id="filterLogType" onchange="renderData()">
+                        <option value="ALL">🔽 الكل (داخل / خارج / تصحيح)</option>
+                        <option value="داخل">📥 داخل </option>
+                        <option value="خارج">📤 خارج  </option>
+                        <option value="تعديل رصيد">📝 تصحيح رصيد مباشر</option>
+                    </select>
+                </div>
+                <div>
+                    <label>تصفية بالمستودع</label>
+                    <select id="filterLogWH" onchange="renderData()">
+                        <option value="ALL">🔽 كل المستودعات</option>
+                    </select>
+                </div>
+                <div class="searchable-select-container">
+                    <label>تصفية بالصنف / المادة (اكتب وابحث)</label>
+                    <input type="text" id="logItemSearch" placeholder="🔍 اكتب صنفاً لتصفيته..." oninput="filterGlobalSearch('logGlobal')" onfocus="showGlobalSearchDropdown('logGlobal')" onkeydown="handleDropdownNavigation(event, 'logGlobal')" autocomplete="off">
+                    <div id="logSearchDropdown" class="custom-dropdown-list"></div>
+                </div>
+                <div>
+                    <label>بحث بالجهة / الزبون</label>
+                    <input type="text" id="filterLogSender" placeholder="الزبون أو المورد..." oninput="renderData()">
+                </div>
+            </div>
+
             <div class="table-container">
                 <table id="logsTable">
                     <thead>
@@ -596,31 +712,39 @@
             <span class="admin-only-badge">🔒 لوحة تحكم الإدارة العليا فقط</span>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
                 <div>
-                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">🏭 إضافة مادة جديدة</h3>
+                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">🖼️ شعار المنشأة (Logo)</h3>
+                    <div style="background: var(--input-bg); padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); text-align: center;">
+                        <input type="file" id="logoInput" accept="image/*" style="margin-bottom: 10px;" onchange="uploadLogoToServer()">
+                        <p style="font-size: 11px; color: var(--text-muted);">ارفع صورة الشعار الرسمية لعرضها في أعلى المنظومة فوراً.</p>
+                    </div>
+                    
+                    <h3 style="color: var(--asfour-yellow); margin-top: 20px; margin-bottom: 10px; font-size: 14px;">🏭 إضافة مادة جديدة</h3>
                     <div style="display: flex; gap: 8px; margin-bottom: 10px;">
                         <input type="text" id="newProdItem" placeholder="مثال: حديد 12 ملم" onkeydown="if(event.key==='Enter') addNewItem()">
                         <button class="btn-primary" onclick="addNewItem()" style="width: auto; padding: 0 15px;">حفظ</button>
                     </div>
-                    <div class="table-container">
+                    <div class="table-container" style="max-height: 200px; overflow-y: auto;">
                         <table>
                             <thead><tr><th>المواد المعرّفة</th><th>حذف البند</th></tr></thead>
                             <tbody id="manageBody"></tbody>
                         </table>
                     </div>
                 </div>
+
                 <div>
                     <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">📍 إدارة الهناجر / المستودعات</h3>
                     <div style="display: flex; gap: 8px; margin-bottom: 15px;">
-                        <input type="text" id="newWHName" placeholder="اسم الهنقر" onkeydown="if(event.key==='Enter') addNewWH()">
+                        <input type="text" id="newWHName" placeholder="اسم المستودع" onkeydown="if(event.key==='Enter') addNewWH()">
                         <button class="btn-primary" onclick="addNewWH()" style="width: auto; padding: 0 15px;">حفظ</button>
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>المستودع</th><th>إجراءات تعديل/حذف</th></tr></thead>
+                            <thead><tr><th>المستودع</th><th>إجراءات</th></tr></thead>
                             <tbody id="manageWHBody"></tbody>
                         </table>
                     </div>
                 </div>
+
                 <div>
                     <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">👥 إدارة حسابات الموظفين والصلاحيات</h3>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
@@ -634,7 +758,7 @@
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>اسم الحساب</th><th>الرتبة</th><th>تعديل</th><th>إلغاء الحساب</th></tr></thead>
+                            <thead><tr><th>اسم الحساب</th><th>الرتبة</th><th>تعديل</th><th>إلغاء</th></tr></thead>
                             <tbody id="manageUsersBody"></tbody>
                         </table>
                     </div>
@@ -645,11 +769,8 @@
     </div>
 </div>
 
-<!-- مكاتب Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
-<!-- ربط ملف الجافاسكريبت الخارجي -->
 <script src="app.js"></script>
 </body>
 </html>
