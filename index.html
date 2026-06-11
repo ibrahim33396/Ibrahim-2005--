@@ -3,18 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>عصفور ستيل - إدارة المخازن</title>
+    <title>عصفور ستيل - إدارة المخازن الاحترافية</title>
     <style>
         :root {
-            --asfour-dark: #111111;
-            --asfour-panel: #1a1a1a;
-            --asfour-yellow: #f1c40f;
-            --text-main: #ffffff;
-            --text-muted: #aaaaaa;
-            --border-color: #333333;
+            /* ألوان مستوحاة من صناعة الحديد والفولاذ */
+            --asfour-dark: #1e2229;          /* رمادي حديدي داكن */
+            --asfour-panel: #282c34;         /* فولاذي مصقول */
+            --asfour-yellow: #e67e22;        /* برتقالي ناري لصهير الحديد */
+            --asfour-accent: #f1c40f;        /* ذهبي معدني */
+            --text-main: #f5f6fa;            /* أبيض فضي */
+            --text-muted: #95a5a6;           /* رمادي معدني باهت */
+            --border-color: #3f4451;         /* حدود فولاذية غامقة */
             --success: #2ecc71;
             --danger: #e74c3c;
             --orange: #e67e22;
+            --input-bg: #1a1d24;
+        }
+
+        [data-theme="light"] {
+            --asfour-dark: #ebedf2;
+            --asfour-panel: #ffffff;
+            --asfour-yellow: #d35400;
+            --asfour-accent: #f39c12;
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --border-color: #bdc3c7;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --orange: #e67e22;
+            --input-bg: #f8f9fa;
         }
 
         * {
@@ -22,6 +39,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
         }
 
         body {
@@ -40,13 +58,15 @@
             justify-content: space-between;
             align-items: center;
             padding-bottom: 12px;
-            border-bottom: 2px solid var(--asfour-yellow);
+            border-bottom: 3px solid var(--asfour-yellow);
             margin-bottom: 15px;
         }
 
         h1 {
             color: var(--asfour-yellow);
             font-size: 22px;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
         #login-screen {
@@ -57,6 +77,7 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
         }
 
         .tabs {
@@ -87,13 +108,13 @@
             font-weight: bold;
             white-space: nowrap;
             font-size: 14px;
-            transition: 0.2s;
         }
 
-        .tab-btn.active, .tab-btn:hover {
+        .tab-btn.active, .tab-btn:focus, .tab-btn:hover {
             background: var(--asfour-yellow);
-            color: var(--asfour-dark);
+            color: #fff;
             border-color: var(--asfour-yellow);
+            outline: none;
         }
 
         .tab-content {
@@ -102,6 +123,7 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .form-group {
@@ -122,19 +144,20 @@
         input, select, button {
             width: 100%;
             padding: 10px;
-            background: #222;
+            background: var(--input-bg);
             border: 1px solid var(--border-color);
-            color: #fff;
+            color: var(--text-main);
             border-radius: 5px;
             font-size: 14px;
             outline: none;
         }
 
         input:focus, select:focus {
-            border-color: var(--asfour-yellow);
+            border-color: var(--asfour-accent);
+            box-shadow: 0 0 5px rgba(241, 196, 15, 0.4);
         }
 
-        input[type="date"] {
+        [data-theme="dark"] input[type="date"] {
             color-scheme: dark;
         }
 
@@ -148,7 +171,7 @@
             top: 100%;
             left: 0;
             right: 0;
-            background: #252525;
+            background: var(--asfour-panel);
             border: 1px solid var(--asfour-yellow);
             border-radius: 5px;
             max-height: 220px;
@@ -161,27 +184,27 @@
         .custom-dropdown-item {
             padding: 12px 10px;
             cursor: pointer;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
             font-size: 14px;
-            color: #fff;
+            color: var(--text-main);
         }
 
         .custom-dropdown-item:hover, .custom-dropdown-item.focused {
             background: var(--asfour-yellow);
-            color: var(--asfour-dark);
+            color: #fff;
             font-weight: bold;
         }
 
         button.btn-primary {
             background: var(--asfour-yellow);
-            color: var(--asfour-dark);
+            color: #fff;
             font-weight: bold;
             cursor: pointer;
             border: none;
         }
 
         button.btn-primary:focus {
-            outline: 2px solid #fff;
+            outline: 2px solid var(--text-main);
         }
 
         button.btn-action {
@@ -211,12 +234,13 @@
         }
 
         th {
-            background: #252525;
-            color: var(--asfour-yellow);
+            background: var(--input-bg);
+            color: var(--asfour-accent);
+            border-bottom: 2px solid var(--border-color);
         }
 
         tr:hover {
-            background: #202020;
+            background: var(--input-bg);
         }
 
         .stats-grid {
@@ -227,10 +251,10 @@
         }
 
         .stat-card {
-            background: #222;
+            background: var(--input-bg);
             padding: 12px;
             border-radius: 6px;
-            border-right: 4px solid var(--asfour-yellow);
+            border-right: 4px solid var(--asfour-accent);
         }
 
         .stat-card.res {
@@ -255,6 +279,26 @@
             font-weight: bold;
         }
 
+        .theme-toggle-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            width: auto;
+            padding: 5px;
+        }
+
+        .admin-only-badge {
+            background: var(--danger);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
         @media (max-width: 600px) {
             body { padding: 5px; }
             h1 { font-size: 18px; }
@@ -272,29 +316,33 @@
 
     <div id="login-screen">
         <h2 style="color: var(--asfour-yellow); margin-bottom: 15px; font-size: 18px;">🔒 دخول عصفور ستيل</h2>
+        <input type="text" id="adminUser" placeholder="اسم المستخدم" style="text-align: center; margin-bottom: 12px;">
         <input type="password" id="adminPass" placeholder="الرمز السرّي" style="text-align: center; margin-bottom: 12px;" onkeydown="if(event.key==='Enter') login()">
         <button class="btn-primary" onclick="login()">دخول ومزامنة</button>
-        <p id="loginError" class="error-msg">❌ الرمز غير صحيح</p>
+        <p id="loginError" class="error-msg">❌ البيانات غير صحيحة</p>
     </div>
 
     <div id="main-app" style="display: none;">
         <header>
-            <div>
+            <div style="display: flex; align-items: center; gap: 15px;">
                 <h1>ASFOUR STEEL</h1>
+                <button onclick="toggleTheme()" class="theme-toggle-btn" id="themeIcon" title="تغيير الثيم">🌓</button>
             </div>
-            <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span id="currentUserLabel" style="color: var(--text-muted); font-size: 13px; font-weight: bold;"></span>
+                <span id="roleLabel"></span>
                 <span style="color: var(--success); font-weight: bold; font-size: 12px;">● متصل</span>
             </div>
         </header>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('stock-view', this)">📊 الجرد الكلي</button>
-            <button class="tab-btn" onclick="switchTab('inv-view', this)">🏪 المتاح للبيع</button>
-            <button class="tab-btn" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
-            <button class="tab-btn" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
-            <button class="tab-btn" onclick="switchTab('res-view', this)">🔒 المحجوزات</button>
-            <button class="tab-btn" onclick="switchTab('logs-view', this)">📜 الأرشيف العام</button>
-            <button class="tab-btn" onclick="switchTab('setup-view', this)">⚙️ الإعدادات</button>
+        <div class="tabs" id="mainTabsList">
+            <button class="tab-btn active" data-tab="stock-view" onclick="switchTab('stock-view', this)">📊 الجرد الكلي</button>
+            <button class="tab-btn" data-tab="inv-view" onclick="switchTab('inv-view', this)">🏪 المتاح للبيع</button>
+            <button class="tab-btn" data-tab="in-view" onclick="switchTab('in-view', this)">📥 فاتورة داخل</button>
+            <button class="tab-btn" data-tab="out-view" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
+            <button class="tab-btn" data-tab="res-view" onclick="switchTab('res-view', this)">🔒 المحجوزات</button>
+            <button class="tab-btn" data-tab="logs-view" onclick="switchTab('logs-view', this)">📜 الأرشيف العام</button>
+            <button class="tab-btn" id="setupTabBtn" data-tab="setup-view" onclick="switchTab('setup-view', this)" style="display: none;">⚙️ الإعدادات وحسابات الموظفين</button>
         </div>
 
         <div id="stock-view" class="tab-content" style="display: block;">
@@ -305,7 +353,7 @@
                         <div id="stockDropdown" class="custom-dropdown-list"></div>
                     </div>
                     <div style="max-width: 250px; width: 100%;">
-                        <select id="stockWHFilter" onchange="renderData()" style="border-color: var(--asfour-yellow); background: #1f1f1f;">
+                        <select id="stockWHFilter" onchange="renderData()" onkeydown="kbNav(event, 'stockSearch')" style="border-color: var(--asfour-yellow);">
                             <option value="ALL">🌍 كل المستودعات</option>
                         </select>
                     </div>
@@ -331,7 +379,7 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>رصيد الصنف الحالي</h3>
-                    <p id="grandTotalQty" style="color: var(--asfour-yellow);">0 قطعة</p>
+                    <p id="grandTotalQty" style="color: var(--asfour-accent);">0 قطعة</p>
                 </div>
                 <div class="stat-card res">
                     <h3>المحجوز من الصنف</h3>
@@ -353,7 +401,7 @@
                         <div id="invDropdown" class="custom-dropdown-list"></div>
                     </div>
                     <div style="max-width: 250px; width: 100%;">
-                        <select id="invWHFilter" onchange="renderData()" style="border-color: var(--asfour-yellow); background: #1f1f1f; color: #fff; padding: 10px; border-radius: 5px; width: 100%;">
+                        <select id="invWHFilter" onchange="renderData()" onkeydown="kbNav(event, 'invSearch')" style="border-color: var(--asfour-yellow); width: 100%;">
                             <option value="ALL">🌍 كل المستودعات</option>
                         </select>
                     </div>
@@ -369,7 +417,7 @@
                             <th>إجمالي الخارج</th>
                             <th>الرصيد الكلي</th>
                             <th>الصافي للبيع</th>
-                            <th>إجراءات</th>
+                            <th>إجراءات للمدير</th>
                         </tr>
                     </thead>
                     <tbody id="invBody"></tbody>
@@ -410,7 +458,7 @@
                     <label>ملاحظات</label>
                     <input type="text" id="inNotes" placeholder="..." onkeydown="kbNav(event, 'btn_SUBMIT_IN')">
                 </div>
-                <button class="btn-primary" id="btn_SUBMIT_IN" onclick="addToInvoice('in')" onkeydown="kbNav(event, 'inDate')">➕ إضافة</button>
+                <button class="btn-primary" id="btn_SUBMIT_IN" onclick="addToInvoice('in')" onkeydown="kbNav(event, 'inDate')">➕ إضافة (Enter)</button>
             </div>
             <div class="table-container">
                 <table id="inInvoiceTable">
@@ -420,7 +468,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px; background: var(--success);" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة</button>
+            <button class="btn-action" style="margin-top: 15px; background: var(--success);" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة سحابياً</button>
         </div>
 
         <div id="out-view" class="tab-content">
@@ -456,7 +504,7 @@
                     <label>ملاحظات</label>
                     <input type="text" id="outNotes" placeholder="..." onkeydown="kbNav(event, 'btn_SUBMIT_OUT')">
                 </div>
-                <button class="btn-primary" id="btn_SUBMIT_OUT" onclick="addToInvoice('out')" onkeydown="kbNav(event, 'outDate')">➕ إضافة</button>
+                <button class="btn-primary" id="btn_SUBMIT_OUT" onclick="addToInvoice('out')" onkeydown="kbNav(event, 'outDate')">➕ إضافة (Enter)</button>
             </div>
             <div class="table-container">
                 <table id="outInvoiceTable">
@@ -466,7 +514,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة</button>
+            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة سحابياً</button>
         </div>
 
         <div id="res-view" class="tab-content">
@@ -506,7 +554,7 @@
                             <th>الزبون / التاريخ</th>
                             <th>المادة المحجوزة</th>
                             <th>العدد الأساسي</th>
-                            <th>إجراءات</th>
+                            <th>إجراءات للمدير</th>
                         </tr>
                     </thead>
                     <tbody id="resBody"></tbody>
@@ -519,7 +567,7 @@
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; max-width: 400px;">
                     <h2 style="font-size: 16px; white-space: nowrap;">📜 الأرشيف</h2>
                     <div class="searchable-select-container" style="flex: 1;">
-                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث باسم الزبون لمشاهدة حركاته..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" onkeydown="handleDropdownNavigation(event, 'logGlobal')" autocomplete="off">
+                        <input type="text" id="logCustomerSearch" placeholder="🔍 ابحث في كامل الأرشيف..." oninput="filterGlobalSearch('log')" onfocus="showGlobalSearchDropdown('log')" onkeydown="handleDropdownNavigation(event, 'logGlobal')" autocomplete="off">
                         <div id="logSearchDropdown" class="custom-dropdown-list"></div>
                     </div>
                 </div>
@@ -536,7 +584,7 @@
                             <th>المستودع</th>
                             <th>الوزن</th>
                             <th>الجهة/الزبون</th>
-                            <th>حذف</th>
+                            <th>مسح (للمدير)</th>
                         </tr>
                     </thead>
                     <tbody id="logsBody"></tbody>
@@ -545,6 +593,7 @@
         </div>
 
         <div id="setup-view" class="tab-content">
+            <span class="admin-only-badge">🔒 لوحة تحكم الإدارة العليا فقط</span>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
                 <div>
                     <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">🏭 إضافة مادة جديدة</h3>
@@ -554,7 +603,7 @@
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>المواد المعرّفة</th><th>حذف</th></tr></thead>
+                            <thead><tr><th>المواد المعرّفة</th><th>حذف البند</th></tr></thead>
                             <tbody id="manageBody"></tbody>
                         </table>
                     </div>
@@ -567,8 +616,26 @@
                     </div>
                     <div class="table-container">
                         <table>
-                            <thead><tr><th>المستودع</th><th>إجراءات</th></tr></thead>
+                            <thead><tr><th>المستودع</th><th>إجراءات تعديل/حذف</th></tr></thead>
                             <tbody id="manageWHBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: var(--asfour-yellow); margin-bottom: 10px; font-size: 14px;">👥 إدارة حسابات الموظفين والصلاحيات</h3>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">
+                        <input type="text" id="newUserName" placeholder="اسم المستخدم الجديد">
+                        <input type="password" id="newUserPass" placeholder="كلمة السر">
+                        <select id="newUserRole" style="border-color: var(--border-color);">
+                            <option value="employee">موظف (صلاحيات محدودة)</option>
+                            <option value="admin">مدير نظام (كامل الصلاحيات)</option>
+                        </select>
+                        <button class="btn-primary" onclick="addNewUser()">➕ إضافة حساب موظف</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>اسم الحساب</th><th>الرتبة</th><th>تعديل</th><th>إلغاء الحساب</th></tr></thead>
+                            <tbody id="manageUsersBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -578,9 +645,11 @@
     </div>
 </div>
 
+<!-- مكاتب Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="script.js"></script>
 
+<!-- ربط ملف الجافاسكريبت الخارجي -->
+<script src="app.js"></script>
 </body>
 </html>
