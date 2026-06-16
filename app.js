@@ -124,9 +124,10 @@ function login() {
     }
 }
 
+// تعديل جلب البيانات لضمان عدم الكتابة فوق البيانات القديمة عند التحديث الأولي
 dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
+    if (data && (data.items || data.warehouses || data.users)) {
         db = data.items || [];
         whs = data.warehouses || ["المخزن الرئيسي"];
         logs = data.logs || [];
@@ -144,8 +145,6 @@ dbRef.on('value', (snapshot) => {
         if (document.getElementById('main-app').style.display === 'block') {
             renderData(); 
         }
-    } else {
-        save();
     }
 });
 
