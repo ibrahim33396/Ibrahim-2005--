@@ -6,17 +6,17 @@
     <title>عصفور ستيل - إدارة المخازن الاحترافية</title>
     <style>
         :root {
-            --asfour-dark: #1e2229;          
-            --asfour-panel: rgba(30, 33, 41, 0.65); /* زيادة الشفافية الزجاجية للخلفيات */
-            --asfour-yellow: #e67e22;        
+            --asfour-dark: #1e2229;
+            --asfour-panel: rgba(30, 33, 41, 0.65);
+            --asfour-yellow: #e67e22;
             --asfour-accent: #f1c40f;        
             --text-main: #f5f6fa;            
             --text-muted: #cdcdcd;           
-            --border-color: rgba(255, 255, 255, 0.15); /* حدود ناعمة شفافة */
+            --border-color: rgba(255, 255, 255, 0.15);
             --success: #2ecc71;
             --danger: #e74c3c;
             --orange: #e67e22;
-            --input-bg: rgba(0, 0, 0, 0.55); /* حقول مدخلات شفافة بالكامل */
+            --input-bg: rgba(0, 0, 0, 0.55);
         }
 
         [data-theme="light"] {
@@ -42,10 +42,9 @@
         }
 
         body {
-            /* تعديل موضع الصورة ليكون في المنتصف تماماً وإضافة مسحة صفراء دافئة متناسقة */
             background-image: linear-gradient(rgba(230, 126, 34, 0.15), rgba(0, 0, 0, 0.75)), url('/photo_٢٠٢٦-٠٦-١١_١٨-٢٠-١٥.jpg');
             background-size: cover;
-            background-position: center center; /* في المنتصف تماماً */
+            background-position: center center;
             background-repeat: no-repeat;
             background-attachment: fixed;
             color: var(--text-main);
@@ -97,7 +96,7 @@
         #login-screen {
             max-width: 380px;
             margin: 90px auto;
-            background: rgba(25px, 28px, 34px, 0.55); /* زيادة شفافية نافذة تسجيل الدخول */
+            background: rgba(25px, 28px, 34px, 0.55);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             padding: 30px 25px;
@@ -110,7 +109,7 @@
         #login-screen input.login-kb-field {
             width: 100%;
             padding: 14px;
-            background: rgba(0, 0, 0, 0.5); /* شفافية داخل الحقول */
+            background: rgba(0, 0, 0, 0.5);
             border: 2px solid rgba(255, 255, 255, 0.15);
             color: #fff;
             border-radius: 6px;
@@ -127,7 +126,6 @@
             box-shadow: 0 0 10px rgba(230, 126, 34, 0.4);
         }
 
-        /* جعل أزرار المنظومة أكثر شفافية واحترافية */
         .btn-login-submit, button.btn-primary, button.btn-action, .tab-btn {
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
@@ -137,7 +135,7 @@
         #login-screen .btn-login-submit {
             width: 100%;
             padding: 14px;
-            background: rgba(230, 126, 34, 0.45); /* زر تسجيل دخول شفاف */
+            background: rgba(230, 126, 34, 0.45);
             color: #fff;
             font-weight: bold;
             font-size: 15px;
@@ -173,7 +171,7 @@
         }
 
         .tab-btn {
-            background: rgba(0, 0, 0, 0.35); /* أزرار التبويبات العلوية شفافة */
+            background: rgba(0, 0, 0, 0.35);
             color: var(--text-main);
             border: 1px solid var(--border-color);
             padding: 10px 16px;
@@ -284,7 +282,7 @@
         }
 
         button.btn-primary {
-            background: rgba(230, 126, 34, 0.5); /* أزرار الإجراءات شفافة */
+            background: rgba(230, 126, 34, 0.5);
             border: 1px solid var(--asfour-yellow);
             color: #fff;
             font-weight: bold;
@@ -297,7 +295,7 @@
         }
 
         button.btn-action {
-            background: rgba(46, 204, 113, 0.45); /* زر الحفظ شفاف */
+            background: rgba(46, 204, 113, 0.45);
             border: 1px solid var(--success);
             color: white;
             font-weight: bold;
@@ -392,6 +390,15 @@
             margin-bottom: 5px;
         }
 
+        /* تنسيقات لإخفاء أزرار الإجراءات للزوار */
+        body.viewer-mode .viewer-hidden {
+            display: none !important;
+        }
+        body.viewer-mode .viewer-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         @media (max-width: 600px) {
             body { padding: 5px; }
             h1 { font-size: 18px; }
@@ -436,7 +443,7 @@
             <button class="tab-btn" data-tab="out-view" onclick="switchTab('out-view', this)">📤 فاتورة خارج</button>
             <button class="tab-btn" data-tab="res-view" onclick="switchTab('res-view', this)">🔒 المحجوزات</button>
             <button class="tab-btn" data-tab="logs-view" onclick="switchTab('logs-view', this)">📜 الأرشيف العام</button>
-            <button class="tab-btn" id="setupTabBtn" data-tab="setup-view" onclick="switchTab('setup-view', this)" style="display: none;">⚙️ الإعدادات وحسابات الموظفين</button>
+            <button class="tab-btn" id="setupTabBtn" data-tab="setup-view" onclick="switchTab('setup-view', this)" style="display: none;">⚙️ الإعدادات</button>
         </div>
 
         <div id="stock-view" class="tab-content" style="display: block;">
@@ -493,7 +500,7 @@
                     <div class="searchable-select-container" style="max-width: 250px;">
                         <input type="text" id="invSearch" placeholder="🔍 اكتب صنفاً واختاره لفلترة المتاح..." oninput="filterGlobalSearch('inv')" onfocus="showGlobalSearchDropdown('inv')" onkeydown="handleDropdownNavigation(event, 'inv')" autocomplete="off">
                         <div id="invDropdown" class="custom-dropdown-list"></div>
-                    </div>
+                     </div>
                     <div style="max-width: 250px; width: 100%;">
                         <select id="invWHFilter" onchange="renderData()" onkeydown="kbNav(event, 'invSearch')" style="border-color: var(--asfour-yellow); width: 100%;">
                             <option value="ALL">🌍 كل المستودعات</option>
@@ -521,7 +528,7 @@
 
         <div id="in-view" class="tab-content">
             <h2 style="color: var(--success); margin-bottom: 10px; font-size: 16px;">📥 فاتورة داخل (توريد)</h2>
-            <div class="form-group">
+            <div class="form-group viewer-hidden">
                 <div>
                     <label>التاريخ</label>
                     <input type="date" id="inDate" onkeydown="kbNav(event, 'inNameSearch')">
@@ -534,7 +541,7 @@
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
-                    <input type="number" id="inQty" placeholder="القطع" onkeydown="kbNav(event, 'inWH')">
+                    <input type="number" id="inQty" step="0.25" placeholder="القطع" onkeydown="kbNav(event, 'inWH')">
                 </div>
                 <div>
                     <label>المستودع</label>
@@ -562,12 +569,12 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px;" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة سحابياً</button>
+             <button class="btn-action viewer-hidden" style="margin-top: 15px;" onclick="saveFinalInvoice('in')">💾 ترحيل وحفظ الفاتورة سحابياً</button>
         </div>
 
         <div id="out-view" class="tab-content">
             <h2 style="color: var(--orange); margin-bottom: 10px; font-size: 16px;">📤 فاتورة خارج (بيع)</h2>
-            <div class="form-group">
+            <div class="form-group viewer-hidden">
                 <div>
                     <label>التاريخ</label>
                     <input type="date" id="outDate" onkeydown="kbNav(event, 'outNameSearch')">
@@ -580,7 +587,7 @@
                 </div>
                 <div>
                     <label>العدد (قطع)</label>
-                    <input type="number" id="outQty" placeholder="القطع" onkeydown="kbNav(event, 'outWH')">
+                    <input type="number" id="outQty" step="0.25" placeholder="القطع" onkeydown="kbNav(event, 'outWH')">
                 </div>
                 <div>
                     <label>المخزن</label>
@@ -608,7 +615,7 @@
                     <tbody></tbody>
                 </table>
             </div>
-            <button class="btn-action" style="margin-top: 15px; background: rgba(230, 126, 34, 0.5); border-color: var(--orange);" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة سحابياً</button>
+            <button class="btn-action viewer-hidden" style="margin-top: 15px; background: rgba(230, 126, 34, 0.5); border-color: var(--orange);" onclick="saveFinalInvoice('out')">📤 ترحيل وخصم الفاتورة سحابياً</button>
         </div>
 
         <div id="res-view" class="tab-content">
@@ -619,17 +626,17 @@
                     <div id="resSearchDropdown" class="custom-dropdown-list"></div>
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group viewer-hidden">
                 <input type="hidden" id="editResIndex" value="-1">
                 <div class="searchable-select-container">
-                    <label>المادة (اكتب للبحث)</label>
+                    <label>المادة (اكتب للبحث واضغط Enter)</label>
                     <input type="text" id="resNameSearch" placeholder="🔍 اكتب اسم المادة هنا..." oninput="filterDropdown('res')" onfocus="showDropdown('res')" onkeydown="handleDropdownNavigation(event, 'res')" autocomplete="off">
                     <input type="hidden" id="resName">
                     <div id="resDropdown" class="custom-dropdown-list"></div>
                 </div>
                 <div>
                     <label>العدد</label>
-                    <input type="number" id="resQty" placeholder="القطع" onkeydown="kbNav(event, 'resCustomer')">
+                    <input type="number" id="resQty" step="0.25" placeholder="القطع" onkeydown="kbNav(event, 'resCustomer')">
                 </div>
                 <div>
                     <label>اسم الزبون</label>
@@ -751,10 +758,11 @@
                         <input type="text" id="newUserName" placeholder="اسم المستخدم الجديد">
                         <input type="password" id="newUserPass" placeholder="كلمة السر">
                         <select id="newUserRole" style="border-color: var(--border-color);">
-                            <option value="employee">موظف (صلاحيات محدودة)</option>
                             <option value="admin">مدير نظام (كامل الصلاحيات)</option>
+                            <option value="employee">موظف (صلاحيات إدخال وإخراج)</option>
+                            <option value="viewer">زائر (للقراءة فقط)</option>
                         </select>
-                        <button class="btn-primary" onclick="addNewUser()">➕ إضافة حساب موظف</button>
+                        <button class="btn-primary" onclick="addNewUser()">➕ إضافة حساب جديد</button>
                     </div>
                     <div class="table-container">
                         <table>

@@ -9,7 +9,6 @@ const firebaseConfig = {
   appId: "1:244171133502:web:eff38819fd52402960f76f",
   measurementId: "G-XMWFJ3HGNP"
 };
-
 firebase.initializeApp(firebaseConfig);
 const dbRef = firebase.database().ref('asfour_data');
 
@@ -18,14 +17,14 @@ let whs = ["المخزن الرئيسي"];
 let logs = [];
 let reservations = [];
 let users = { "admin": { pass: "000", role: "admin" } }; 
-let appLogoBase64 = ""; 
+let appLogoBase64 = "";
 let tempInvoice = { in: [], out: [] };
 
 let selectedStockItem = null;
 let selectedInventoryItem = null;
 let selectedLogItem = null; 
 let currentDropdownFocusIndex = -1;
-let currentLoggedUser = ""; 
+let currentLoggedUser = "";
 
 (function initTheme() {
     const savedTheme = localStorage.getItem('asfour-theme') || 'dark';
@@ -44,17 +43,19 @@ function isAdmin() {
     return users[currentLoggedUser].role === 'admin' || currentLoggedUser.toLowerCase() === 'admin';
 }
 
-// هندسة الكيبورد الفائقة لشاشة تسجيل الدخول النشطة
-const loginFields = [document.getElementById('adminUser'), document.getElementById('adminPass'), document.getElementById('loginSubmitBtn')];
+function isViewer() {
+    if (!users[currentLoggedUser]) return false;
+    return users[currentLoggedUser].role === 'viewer';
+}
 
+// هندسة الكيبورد الفائقة لشاشة تسجيل الدخول
+const loginFields = [document.getElementById('adminUser'), document.getElementById('adminPass'), document.getElementById('loginSubmitBtn')];
 loginFields.forEach((field, index) => {
     if(!field) return;
     field.addEventListener('keydown', function(e) {
-        // نضمن عمل هذه الاختصارات داخل صفحة الـ Login فقط لمنع التداخل
         if (document.getElementById('login-screen').style.display === 'none') return;
 
         if (e.key === 'ArrowDown' || e.key === 'Enter') {
-            // عند الضغط على Enter في حقل الباسورد الأخير أو زر الدخول يتم تفعيل دالة الدخول مباشرة
             if (e.key === 'Enter' && (field.id === 'adminPass' || field.id === 'loginSubmitBtn')) {
                 login();
                 return;
@@ -70,7 +71,6 @@ loginFields.forEach((field, index) => {
     });
 });
 
-// تشغيل الفوكس تلقائياً فور فتح صفحة تسجيل الدخول
 window.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('adminUser')) {
         document.getElementById('adminUser').focus();
@@ -81,7 +81,6 @@ function login() {
     const userInput = document.getElementById('adminUser').value.trim();
     const passInput = document.getElementById('adminPass').value;
     const errorMsg = document.getElementById('loginError');
-    
     let userAccount = users[userInput];
     let isValid = false;
     
@@ -102,10 +101,18 @@ function login() {
         
         const setupTab = document.getElementById('setupTabBtn');
         const roleLabel = document.getElementById('roleLabel');
-        if (isAdmin()) {
+        
+        // تطبيق صلاحية الزائر وتعديل الواجهة
+        if (isViewer()) {
+            document.body.classList.add('viewer-mode');
+            setupTab.style.display = 'none';
+            roleLabel.innerHTML = `<span style="background:#3498db; color:white; padding:2px 6px; border-radius:4px; font-size:11px;">زائر (مراقبة فقط)</span>`;
+        } else if (isAdmin()) {
+            document.body.classList.remove('viewer-mode');
             setupTab.style.display = 'block';
             roleLabel.innerHTML = `<span style="background:var(--danger); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">مدير نظام</span>`;
         } else {
+            document.body.classList.remove('viewer-mode');
             setupTab.style.display = 'none';
             roleLabel.innerHTML = `<span style="background:var(--orange); color:white; padding:2px 6px; border-radius:4px; font-size:11px;">موظف</span>`;
         }
@@ -124,7 +131,6 @@ function login() {
     }
 }
 
-// تعديل جلب البيانات لضمان عدم الكتابة فوق البيانات القديمة عند التحديث الأولي
 dbRef.on('value', (snapshot) => {
     const data = snapshot.val();
     if (data && (data.items || data.warehouses || data.users)) {
@@ -133,6 +139,7 @@ dbRef.on('value', (snapshot) => {
         logs = data.logs || [];
         reservations = data.reservations || [];
         appLogoBase64 = data.appLogoBase64 || ""; 
+    
         users = data.users || { "admin": { pass: "000", role: "admin" } }; 
         
         if(!users["admin"]) {
@@ -181,7 +188,7 @@ function uploadLogoToServer() {
     const reader = new FileReader();
     reader.onloadend = function() {
         appLogoBase64 = reader.result; 
-        save(); 
+        save();
         alert("✅ تم رفع وحفظ الشعار الرسمي الجديد في قاعدة البيانات بنجاح!");
     };
     reader.readAsDataURL(file);
@@ -207,9 +214,11 @@ function setDefaultDates() {
 
 function kbNav(e, nextId) { 
     if (e.key === 'Enter') { 
-        e.preventDefault(); 
+        e.preventDefault();
         if (nextId === 'btn_SUBMIT_IN') { addToInvoice('in'); return; }
         if (nextId === 'btn_SUBMIT_OUT') { addToInvoice('out'); return; }
+        if (nextId === 'btn_SUBMIT_RES') { addReservation(); return; } // التأكد من عمل الانتر في الحجوزات
+        
         const nextEl = document.getElementById(nextId);
         if(nextEl) nextEl.focus();
     } 
@@ -252,7 +261,6 @@ function handleDropdownNavigation(e, type) {
 
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown || dropdown.style.display === 'none') return;
-
     const items = dropdown.getElementsByClassName('custom-dropdown-item');
     
     if (e.key === 'ArrowDown') {
@@ -270,7 +278,7 @@ function handleDropdownNavigation(e, type) {
         if (currentDropdownFocusIndex > -1 && items[currentDropdownFocusIndex]) {
             items[currentDropdownFocusIndex].click();
         } else if (items.length > 0) {
-            items[0].click(); 
+            items[0].click();
         }
     } else if (e.key === 'Escape') {
         closeAllDropdowns();
@@ -290,13 +298,11 @@ function switchTab(id, btn) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(id).style.display = 'block';
     if(btn) btn.classList.add('active');
-    
     selectedStockItem = null;
     selectedInventoryItem = null;
     selectedLogItem = null; 
     document.getElementById('editResIndex').value = "-1";
     if(document.getElementById('btn_SUBMIT_RES')) document.getElementById('btn_SUBMIT_RES').innerText = "🔒 تثبيت الحجز";
-    
     if(document.getElementById('stockSearch')) document.getElementById('stockSearch').value = '';
     if(document.getElementById('invSearch')) document.getElementById('invSearch').value = '';
     if(document.getElementById('logItemSearch')) document.getElementById('logItemSearch').value = '';
@@ -313,7 +319,6 @@ function showDropdown(type) {
     
     let filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
     if(filtered.length === 0) filtered = db;
-
     dropdown.innerHTML = filtered.map(item => `
         <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
     `).join('');
@@ -325,7 +330,6 @@ function filterDropdown(type) {
     const dropdown = document.getElementById(type + 'Dropdown');
     const inputVal = document.getElementById(type + 'NameSearch').value.toLowerCase();
     const filtered = db.filter(item => item.name.toLowerCase().includes(inputVal));
-    
     if(filtered.length > 0) {
         dropdown.innerHTML = filtered.map(item => `
             <div class="custom-dropdown-item" onclick="selectDropdownItem('${type}', '${item.name}')">${item.name}</div>
@@ -347,7 +351,6 @@ function showGlobalSearchDropdown(view) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     const inputVal = document.getElementById(inputId).value.toLowerCase();
-    
     let listItems = [];
     if(view === 'stock' || view === 'inv' || view === 'logGlobal') {
         listItems = db.map(i => i.name);
@@ -359,7 +362,6 @@ function showGlobalSearchDropdown(view) {
 
     let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
     if(filtered.length === 0) filtered = listItems.slice(0, 15);
-
     dropdown.innerHTML = filtered.map(name => `
         <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
     `).join('');
@@ -376,7 +378,6 @@ function filterGlobalSearch(view) {
     const dropdown = document.getElementById(dropdownId);
     if (!dropdown) return;
     const inputVal = document.getElementById(inputId).value.toLowerCase();
-    
     let listItems = [];
     if(view === 'stock' || view === 'inv' || view === 'logGlobal') {
         listItems = db.map(i => i.name);
@@ -387,7 +388,6 @@ function filterGlobalSearch(view) {
     }
 
     let filtered = listItems.filter(name => name.toLowerCase().includes(inputVal));
-    
     if(filtered.length > 0) {
         dropdown.innerHTML = filtered.map(name => `
             <div class="custom-dropdown-item" onclick="selectGlobalSearchItem('${view}', '${name}')">${name}</div>
@@ -413,7 +413,6 @@ function selectGlobalSearchItem(view, value) {
     document.getElementById(inputId).value = value;
     document.getElementById(dropdownId).style.display = 'none';
     currentDropdownFocusIndex = -1;
-    
     if(view === 'stock') selectedStockItem = value;
     if(view === 'inv') selectedInventoryItem = value;
     if(view === 'logGlobal') selectedLogItem = value; 
@@ -461,9 +460,7 @@ function addNewUser() {
     const user = document.getElementById('newUserName').value.trim();
     const pass = document.getElementById('newUserPass').value.trim();
     const role = document.getElementById('newUserRole').value;
-    
     if(!user || !pass) return alert("الرجاء كتابة اسم مستخدم وكلمة سر صحيحة");
-    
     if(user.toLowerCase() === 'admin' && currentLoggedUser.toLowerCase() !== 'admin') {
         return alert("لا يمكن تعديل حساب المدير الأساسي إلا من خلال الحساب نفسه.");
     }
@@ -484,19 +481,18 @@ function editUserFields(oldUser) {
     const currentAcc = users[oldUser];
     const currentPass = typeof currentAcc === 'object' ? currentAcc.pass : currentAcc;
     const currentRole = typeof currentAcc === 'object' ? (currentAcc.role || 'employee') : 'employee';
-
     const newUserName = prompt(`تعديل اسم الحساب الحالي [ ${oldUser} ] إلى:`, oldUser);
     if (!newUserName || newUserName.trim() === "") return;
-    
     if (newUserName.trim() !== oldUser && users[newUserName.trim()]) {
         return alert("🚨 خطأ: اسم المستخدم الجديد مستخدم بالفعل.");
     }
 
-    const newRoleInput = prompt(`تعديل الصلاحيات:\nاكتب (1) لجعله: مدير نظام\nاكتب (2) لجعله: موظف`, currentRole === 'admin' ? '1' : '2');
+    const newRoleInput = prompt(`تعديل الصلاحيات:\nاكتب (1) لجعله: مدير نظام\nاكتب (2) لجعله: موظف\nاكتب (3) لجعله: زائر (قراءة فقط)`, currentRole === 'admin' ? '1' : (currentRole === 'viewer' ? '3' : '2'));
     if (!newRoleInput) return;
 
     let targetRole = 'employee';
     if (newRoleInput.trim() === '1') targetRole = 'admin';
+    if (newRoleInput.trim() === '3') targetRole = 'viewer';
 
     delete users[oldUser];
     users[newUserName.trim()] = { pass: currentPass, role: targetRole };
@@ -521,7 +517,6 @@ function editWHName(oldName) {
     const newName = prompt(`تعديل اسم المستودع الحالي [ ${oldName} ] إلى:`, oldName);
     if (!newName || newName.trim() === "" || newName === oldName) return;
     if (whs.includes(newName.trim())) return alert("🚨 هذا الاسم موجود بالفعل.");
-
     const index = whs.indexOf(oldName);
     if (index !== -1) {
         whs[index] = newName.trim();
@@ -559,6 +554,7 @@ function removeWH(whName) {
 }
 
 function quickEditItem(itemName) {
+    if(isViewer()) return alert("🚨 عذراً، حسابك للقراءة فقط.");
     if(!isAdmin()) return alert("🚨 الإجراء مرفوض للموظفين.");
     const item = db.find(i => i.name === itemName);
     if (!item) return;
@@ -571,21 +567,19 @@ function quickEditItem(itemName) {
 
     let currentQty = item.stocks[targetWH] || 0;
     let currentWeight = item.weights[targetWH] || 0;
-
     let newQtyInput = prompt(`تعديل رصيد [ ${itemName} ] في [ ${targetWH} ]:\nالكمية الحالية هي (${currentQty} قطعة).\nأدخل الكمية الجديدة:`, currentQty);
     if (newQtyInput === null) return; 
     
     let newWeightInput = prompt(`أدخل الوزن الإجمالي الجديد بالـ (كجم):\nالوزن الحالي هو (${currentWeight} كجم):`, currentWeight);
     if (newWeightInput === null) return; 
 
-    let newQty = parseInt(newQtyInput);
+    // تحويل القيمة إلى Float لدعم الكسور
+    let newQty = parseFloat(newQtyInput);
     let newWeight = parseFloat(newWeightInput);
-
     if (isNaN(newQty) || isNaN(newWeight)) return alert("🚨 خطأ في إدخال الأرقام.");
 
     item.stocks[targetWH] = newQty;
     item.weights[targetWH] = newWeight;
-
     logs.unshift({
         date: new Date().toLocaleDateString('ar-EG').split('-').reverse().join('/'),
         type: "تعديل رصيد",
@@ -596,14 +590,15 @@ function quickEditItem(itemName) {
         sender: `المدير (${currentLoggedUser})`,
         notes: `تصحيح يدوي مباشر للمتاح للبيع`
     });
-
     save();
     alert("✅ تم التعديل والتحديث السحابي فورياً!");
 }
 
 function addToInvoice(type) {
+    if(isViewer()) return alert("🚨 عذراً، حسابك للقراءة فقط. لا يمكنك إضافة فواتير.");
     const name = document.getElementById(type+'Name').value;
-    const qty = parseInt(document.getElementById(type+'Qty').value) || 0;
+    // تم استخدام parseFloat لدعم الكسور (النص والربع)
+    const qty = parseFloat(document.getElementById(type+'Qty').value) || 0;
     const wh = document.getElementById(type+'WH').value;
     const weight = parseFloat(document.getElementById(type+'Weight').value) || 0;
     const sender = document.getElementById(type+'Sender').value.trim();
@@ -612,7 +607,6 @@ function addToInvoice(type) {
     let rawDate = document.getElementById(type+'Date').value;
     if(!rawDate) rawDate = new Date().toISOString().split('T')[0];
     const formattedDate = rawDate.split('-').reverse().join('/');
-
     if(!name || qty <= 0) return alert("اختر مادة وكمية صحيحة");
     
     tempInvoice[type].push({ name, qty, wh, weight, sender, notes, date: formattedDate });
@@ -631,10 +625,9 @@ function renderInvoice(type) {
             <td>${item.qty} ق</td>
             <td>${item.wh}</td>
             <td style="font-weight:bold; color:var(--asfour-yellow);">${item.weight.toFixed(2)} كجم</td>
-            <td onclick="editInvoiceItem('${type}', ${idx})" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تعديل البند</td>
+            <td onclick="${isViewer() ? '' : `editInvoiceItem('${type}', ${idx})`}" style="cursor:${isViewer() ? 'default' : 'pointer'}; color:${isViewer() ? 'gray' : 'var(--orange)'}; font-weight:bold;">${isViewer() ? '-' : '📝 تعديل البند'}</td>
         </tr>
     `).join('');
-
     if(tempInvoice[type].length > 0) {
         tableBody += `
             <tr style="background: var(--input-bg); font-weight: bold; color: var(--asfour-yellow);">
@@ -646,6 +639,7 @@ function renderInvoice(type) {
 }
 
 function editInvoiceItem(type, idx) {
+    if(isViewer()) return;
     const item = tempInvoice[type][idx];
     document.getElementById(type+'NameSearch').value = item.name;
     document.getElementById(type+'Name').value = item.name;
@@ -665,6 +659,7 @@ function editInvoiceItem(type, idx) {
 }
 
 function saveFinalInvoice(type) {
+    if(isViewer()) return alert("🚨 عذراً، حسابك للقراءة فقط. لا يمكنك الترحيل.");
     if(tempInvoice[type].length === 0) return;
     let hasError = false;
 
@@ -704,15 +699,15 @@ function saveFinalInvoice(type) {
 }
 
 function addReservation() {
+    if(isViewer()) return alert("🚨 عذراً، حسابك للقراءة فقط. لا يمكنك إضافة حجوزات.");
     const name = document.getElementById('resName').value;
-    const qty = parseInt(document.getElementById('resQty').value) || 0;
+    // تم استخدام parseFloat لدعم الكسور (النص والربع)
+    const qty = parseFloat(document.getElementById('resQty').value) || 0;
     const customer = document.getElementById('resCustomer').value.trim();
     const notes = document.getElementById('resNotes').value.trim();
     const editIndex = parseInt(document.getElementById('editResIndex').value);
-    
     const item = db.find(i => i.name === name);
     if(!item || qty <= 0) return alert("اختر مادة صحيحة");
-    
     let targetWH = whs[0] || "المخزن الرئيسي";
     if (!item.stocks) item.stocks = {};
 
@@ -750,9 +745,11 @@ function addReservation() {
     ['resNameSearch', 'resName', 'resQty', 'resCustomer', 'resNotes'].forEach(id => document.getElementById(id).value = '');
     save();
     alert("✅ تم الحفظ بنجاح!");
+    document.getElementById('resNameSearch').focus();
 }
 
 function editReservation(idx) {
+    if(isViewer()) return;
     if(!isAdmin()) return alert("🚨 ميزة التعديل هي صلاحية للمدير فقط.");
     const resQuery = document.getElementById('resSearchQuery').value.toLowerCase();
     let filteredRes = reservations;
@@ -764,7 +761,6 @@ function editReservation(idx) {
     }
     const targetRes = filteredRes[idx];
     const actualIndex = reservations.indexOf(targetRes);
-
     if (actualIndex !== -1) {
         const res = reservations[actualIndex];
         document.getElementById('resNameSearch').value = res.name;
@@ -778,6 +774,7 @@ function editReservation(idx) {
 }
 
 function removeReservation(idx) {
+    if(isViewer()) return;
     if(!isAdmin()) return alert("🚨 إلغاء ورفع الحجز متاح للمدير فقط.");
     if(confirm('هل تريد إلغاء الحجز وإعادة المواد للمستودع؟')) {
         const resQuery = document.getElementById('resSearchQuery').value.toLowerCase();
@@ -790,14 +787,13 @@ function removeReservation(idx) {
         }
         const actualResItem = filteredRes[idx];
         const actualIndexInMain = reservations.indexOf(actualResItem);
-
         if(actualIndexInMain !== -1) {
             const res = reservations[actualIndexInMain];
             const item = db.find(i => i.name === res.name);
             if(item && item.stocks) {
                 let targetWH = res.wh || whs[0] || "المخزن الرئيسي";
                 if(!item.stocks[targetWH]) item.stocks[targetWH] = 0;
-                item.stocks[targetWH] += res.qty; 
+                item.stocks[targetWH] += res.qty;
             }
             reservations.splice(actualIndexInMain, 1);
             save();
@@ -806,6 +802,7 @@ function removeReservation(idx) {
 }
 
 function deleteLogItem(idx) {
+    if(isViewer()) return;
     if(!isAdmin()) return alert("🚨 هذه الصلاحية تابعة للمدير فقط.");
     if(confirm("هل أنت متأكد من مسح هذه الحركة نهائياً؟")) {
         const typeF = document.getElementById('filterLogType').value;
@@ -817,12 +814,12 @@ function deleteLogItem(idx) {
             if(whF !== 'ALL' && l.wh !== whF) return false;
             if(selectedLogItem && l.name !== selectedLogItem) return false; 
             if(senderF && !l.sender.toLowerCase().includes(senderF)) return false;
+            
             return true;
         });
 
         const actualItem = filteredLogs[idx];
         const actualIndexInMainLogs = logs.indexOf(actualItem);
-        
         if(actualIndexInMainLogs !== -1) {
             logs.splice(actualIndexInMainLogs, 1); 
             save();
@@ -835,10 +832,8 @@ function exportInventoryToExcel() {
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('stockWHFilter') ? document.getElementById('stockWHFilter').value : 'ALL';
     let filteredStockDb = db.filter(i => !selectedStockItem ? i.name.toLowerCase().includes(stockSearchQuery) : i.name === selectedStockItem);
-
     if (filteredStockDb.length === 0) return alert("⚠️ لا توجد بيانات جرد.");
     let csvContent = "\uFEFFالمادة;المستودع;الرصيد المتاح (قطع);الوزن الحالي (كجم)\n";
-
     filteredStockDb.forEach(i => {
         if (selectedWHFilter === 'ALL') {
             whs.forEach(w => {
@@ -859,10 +854,8 @@ function exportAvailableToExcel() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
     let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
-
     if (filteredInvDb.length === 0) return alert("⚠️ لا توجد بيانات متاحة.");
     let csvContent = "\uFEFFاسم المادة;إجمالي الداخل (قطع);إجمالي الخارج (قطع);الرصيد الكلي (قطع);الصافي للبيع (قطع)\n";
-
     filteredInvDb.forEach(i => {
         let totalQty = selectedWHFilter === 'ALL' ? Object.values(i.stocks || {}).reduce((a, b) => a + b, 0) : (i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0);
         let itemRes = reservations.filter(r => r.name === i.name && (selectedWHFilter === 'ALL' || r.wh === selectedWHFilter)).reduce((sum, curr) => sum + curr.qty, 0);
@@ -878,7 +871,6 @@ function exportToExcel() {
     const typeF = document.getElementById('filterLogType').value;
     const whF = document.getElementById('filterLogWH').value;
     const senderF = document.getElementById('filterLogSender').value.toLowerCase();
-
     let logsToExport = logs.filter(l => {
         if(typeF !== 'ALL' && l.type !== typeF) return false;
         if(whF !== 'ALL' && l.wh !== whF) return false;
@@ -886,7 +878,6 @@ function exportToExcel() {
         if(senderF && !l.sender.toLowerCase().includes(senderF)) return false;
         return true;
     });
-
     let csv = "\uFEFFالتاريخ;النوع;المادة;العدد;المستودع;الوزن;الجهة/الزبون;ملاحظات\n";
     logsToExport.forEach(l => { csv += `${l.date};${l.type};${l.name};${l.qty};${l.wh};${l.weight};${l.sender};${(l.notes||"")}\n`; });
     downloadCSV(csv, "أرشيف_الحركات_المفلترة");
@@ -910,7 +901,6 @@ function renderData() {
     const whOptions = whs.map(w => `<option value="${w}">${w}</option>`).join('');
     if(document.getElementById('inWH')) document.getElementById('inWH').innerHTML = whOptions;
     if(document.getElementById('outWH')) document.getElementById('outWH').innerHTML = whOptions;
-
     if(document.getElementById('manageBody')) {
         document.getElementById('manageBody').innerHTML = db.map((i, idx) => `
             <tr>
@@ -936,7 +926,9 @@ function renderData() {
         document.getElementById('manageUsersBody').innerHTML = Object.keys(users).map((user) => {
             const acc = users[user];
             const role = typeof acc === 'object' ? (acc.role || 'employee') : 'employee';
-            const roleStr = role === 'admin' ? '🛡️ مدير نظام' : '👤 موظف مخزن';
+            let roleStr = '👤 موظف مخزن';
+            if(role === 'admin') roleStr = '🛡️ مدير نظام';
+            if(role === 'viewer') roleStr = '👀 زائر';
             
             return `
             <tr>
@@ -951,7 +943,6 @@ function renderData() {
     const stockSearchQuery = document.getElementById('stockSearch') ? document.getElementById('stockSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('stockWHFilter') ? document.getElementById('stockWHFilter').value : 'ALL';
     let filteredStockDb = db.filter(i => !selectedStockItem ? i.name.toLowerCase().includes(stockSearchQuery) : i.name === selectedStockItem);
-
     if(document.getElementById('stockBody')) {
         document.getElementById('stockBody').innerHTML = filteredStockDb.map(i => {
             let totalPieces = 0, itemTotalWeight = 0, piecesDetail = '', weightsDetail = '';
@@ -973,7 +964,6 @@ function renderData() {
 
     const resQuery = document.getElementById('resSearchQuery') ? document.getElementById('resSearchQuery').value.toLowerCase() : '';
     let filteredRes = reservations.filter(r => !resQuery || (r.customer && r.customer.toLowerCase().includes(resQuery)) || (r.name && r.name.toLowerCase().includes(resQuery)));
-
     if(document.getElementById('resBody')) {
         document.getElementById('resBody').innerHTML = filteredRes.map((r, idx) => `
             <tr>
@@ -981,8 +971,10 @@ function renderData() {
                 <td><span style="font-weight:600;">${r.name}</span>${r.notes ? `<br><small style="color:var(--orange); font-size:11px;">📝 ${r.notes}</small>` : ''}</td>
                 <td style="font-weight:bold; text-align:center; color:lightgreen;">${r.qty} ق</td>
                 <td>
+                    ${isViewer() ? '-' : `
                     <span onclick="editReservation(${idx})" style="cursor:pointer; color:var(--asfour-yellow); font-weight:bold; margin-left:12px;">📝 تعديل</span>
                     <span onclick="removeReservation(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ إلغاء</span>
+                    `}
                 </td>
             </tr>
         `).join('');
@@ -991,7 +983,6 @@ function renderData() {
     const typeFilterValue = document.getElementById('filterLogType') ? document.getElementById('filterLogType').value : 'ALL';
     const whFilterValue = document.getElementById('filterLogWH') ? document.getElementById('filterLogWH').value : 'ALL';
     const senderFilterValue = document.getElementById('filterLogSender') ? document.getElementById('filterLogSender').value.toLowerCase() : '';
-
     let filteredLogs = logs.filter(l => {
         if (typeFilterValue !== 'ALL' && l.type !== typeFilterValue) return false;
         if (whFilterValue !== 'ALL' && l.wh !== whFilterValue) return false;
@@ -999,7 +990,6 @@ function renderData() {
         if (senderFilterValue && !l.sender.toLowerCase().includes(senderFilterValue)) return false;
         return true;
     });
-
     if(document.getElementById('logsBody')) {
         document.getElementById('logsBody').innerHTML = filteredLogs.map((l, idx) => `
             <tr>
@@ -1010,7 +1000,7 @@ function renderData() {
                 <td>${l.wh}</td>
                 <td>${l.weight.toFixed(1)}</td>
                 <td style="font-weight:bold; color:var(--asfour-yellow);">${l.sender || '-'}</td>
-                <td><span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ مسح</span></td>
+                <td>${isViewer() ? '-' : `<span onclick="deleteLogItem(${idx})" style="cursor:pointer; color:var(--danger); font-weight:bold;">🗑️ مسح</span>`}</td>
             </tr>
         `).join('');
     }
@@ -1021,9 +1011,7 @@ function renderInventory() {
     const q = document.getElementById('invSearch') ? document.getElementById('invSearch').value.toLowerCase() : '';
     const selectedWHFilter = document.getElementById('invWHFilter') ? document.getElementById('invWHFilter').value : 'ALL';
     let filteredInvDb = db.filter(i => !selectedInventoryItem ? i.name.toLowerCase().includes(q) : i.name === selectedInventoryItem);
-
     let currentFilteredQty = 0, currentFilteredRes = 0, currentFilteredWeight = 0, currentFilteredNet = 0;
-
     if(document.getElementById('invBody')) {
         document.getElementById('invBody').innerHTML = filteredInvDb.map(i => {
             let totalQty = selectedWHFilter === 'ALL' ? Object.values(i.stocks || {}).reduce((a, b) => a + b, 0) : (i.stocks && i.stocks[selectedWHFilter] ? i.stocks[selectedWHFilter] : 0);
@@ -1032,12 +1020,10 @@ function renderInventory() {
             let itemRes = reservations.filter(r => r.name === i.name && (selectedWHFilter === 'ALL' || r.wh === selectedWHFilter)).reduce((sum, curr) => sum + curr.qty, 0);
             let totalInFromLogs = logs.filter(l => l.name === i.name && l.type === 'داخل' && (selectedWHFilter === 'ALL' || l.wh === selectedWHFilter)).reduce((sum, curr) => sum + curr.qty, 0);
             let totalOutFromLogs = logs.filter(l => l.name === i.name && l.type === 'خارج' && (selectedWHFilter === 'ALL' || l.wh === selectedWHFilter)).reduce((sum, curr) => sum + curr.qty, 0);
-
             currentFilteredQty += (totalQty + itemRes); 
             currentFilteredRes += itemRes; 
             currentFilteredWeight += itemWeight;
             currentFilteredNet += totalQty;
-
             return `
                 <tr>
                     <td style="font-weight:bold; color:#3498db;">${i.name}</td>
@@ -1045,7 +1031,7 @@ function renderInventory() {
                     <td style="color: coral;">📤 ${totalOutFromLogs} ق</td>
                     <td>${totalQty + itemRes} ق</td>
                     <td style="font-weight:bold; color:lightgreen">${totalQty} ق</td>
-                    <td><span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تصحيح رصيد مباشر</span></td>
+                    <td>${isViewer() ? '-' : `<span onclick="quickEditItem('${i.name}')" style="cursor:pointer; color:var(--orange); font-weight:bold;">📝 تصحيح رصيد مباشر</span>`}</td>
                 </tr>`;
         }).join('');
     }
